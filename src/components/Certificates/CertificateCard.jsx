@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
-import { FaExternalLinkAlt } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaFilePdf } from 'react-icons/fa';
 
 const CertificateCard = ({ certificate, index }) => {
   return (
@@ -47,22 +47,28 @@ const CertificateCard = ({ certificate, index }) => {
         </div>
       )}
       
-      {certificate.credentialId && (
-        <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">
-          Credential ID: {certificate.credentialId}
-        </p>
-      )}
-      
-      {certificate.credentialUrl && (
-        <a
-          href={certificate.credentialUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-primary-500 hover:text-primary-600 text-sm font-semibold"
-        >
-          Verify Certificate <FaExternalLinkAlt size={12} />
-        </a>
-      )}
+      <div className="flex gap-3">
+        {certificate.credentialUrl && (
+          <a
+            href={certificate.credentialUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-primary-500 hover:text-primary-600 text-sm font-semibold"
+          >
+            Verify <FaExternalLinkAlt size={12} />
+          </a>
+        )}
+        {certificate.certificateFile && (
+          <a
+            href={certificate.certificateFile}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-primary-500 hover:text-primary-600 text-sm font-semibold"
+          >
+            View PDF <FaFilePdf size={12} />
+          </a>
+        )}
+      </div>
     </motion.div>
   );
 };
