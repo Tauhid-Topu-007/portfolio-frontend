@@ -13,8 +13,7 @@ import {
   FaHeart,
   FaCertificate,
   FaBriefcase,
-  FaGraduationCap,
-  FaChartLine
+  FaGraduationCap
 } from 'react-icons/fa';
 import { Line, Bar } from 'react-chartjs-2';
 import {
@@ -50,11 +49,10 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({
     totalViews: 0,
-    totalLikes: 0,
-    monthlyData: []
+    totalLikes: 0
   });
 
-  // Ensure data is always an array
+  // SAFETY: Ensure all data is array
   const safeProjects = Array.isArray(projects) ? projects : [];
   const safeBlogs = Array.isArray(blogs) ? blogs : [];
   const safeResearch = Array.isArray(research) ? research : [];
@@ -82,12 +80,20 @@ const AdminDashboard = () => {
     try {
       const { data } = await axios.get('/api/blogs');
       const blogData = Array.isArray(data) ? data : [];
-      const totalViews = blogData.reduce((sum, blog) => sum + (blog?.views || 0), 0);
-      const totalLikes = blogData.reduce((sum, blog) => sum + (blog?.likes || 0), 0);
-      setStats({ totalViews, totalLikes, monthlyData: [] });
+      
+      // SAFETY: Use reduce only on array
+      const totalViews = blogData.length > 0 
+        ? blogData.reduce((sum, blog) => sum + (blog?.views || 0), 0)
+        : 0;
+      
+      const totalLikes = blogData.length > 0 
+        ? blogData.reduce((sum, blog) => sum + (blog?.likes || 0), 0)
+        : 0;
+      
+      setStats({ totalViews, totalLikes });
     } catch (error) {
       console.error('Error fetching stats:', error);
-      setStats({ totalViews: 0, totalLikes: 0, monthlyData: [] });
+      setStats({ totalViews: 0, totalLikes: 0 });
     }
   };
 
@@ -99,27 +105,22 @@ const AdminDashboard = () => {
     { title: 'Certificates', value: safeCertificates.length, icon: FaCertificate, color: 'bg-pink-500', link: '/admin/certificates' },
     { title: 'Experiences', value: safeExperiences.length, icon: FaBriefcase, color: 'bg-indigo-500', link: '/admin/experiences' },
     { title: 'Education', value: safeEducations.length, icon: FaGraduationCap, color: 'bg-teal-500', link: '/admin/educations' },
-    { title: 'Messages', value: Array.isArray(messages) ? messages.length : 0, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
+    { title: 'Messages', value: messages.length, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
     { title: 'Total Views', value: stats.totalViews, icon: FaEye, color: 'bg-indigo-500', link: '/admin/blogs' },
     { title: 'Total Likes', value: stats.totalLikes, icon: FaHeart, color: 'bg-orange-500', link: '/admin/blogs' },
   ];
 
-  const unreadMessages = Array.isArray(messages) ? messages.filter(m => !m?.isRead).length : 0;
-  const unpublishedBlogs = safeBlogs.filter(b => !b?.isPublished).length || 0;
+  // SAFETY: Filter only on arrays
+  const unreadMessages = messages.filter(m => m?.isRead === false).length;
+  const unpublishedBlogs = safeBlogs.filter(b => b?.isPublished === false).length;
 
-  // Prepare chart data safely
-  const last7Days = [...Array(7)].map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }).reverse();
-
+  // Chart Data
   const lineChartData = {
-    labels: last7Days,
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
       {
         label: 'Blog Views',
-        data: [65, 59, 80, 81, 56, 55, 40],
+        data: [65, 59, 80, 81, 56, 55, 40, 70, 85, 90, 95, 100],
         fill: true,
         borderColor: 'rgb(99, 102, 241)',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -127,7 +128,7 @@ const AdminDashboard = () => {
       },
       {
         label: 'Blog Likes',
-        data: [28, 48, 40, 19, 86, 27, 90],
+        data: [28, 48, 40, 19, 86, 27, 90, 45, 70, 65, 80, 85],
         fill: true,
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -145,7 +146,7 @@ const AdminDashboard = () => {
       },
       title: {
         display: true,
-        text: 'Blog Analytics (Last 7 Days)',
+        text: 'Blog Analytics Overview',
       },
     },
   };
@@ -196,14 +197,14 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Welcome back, {user?.name || 'Admin'}!
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {unreadMessages > 0 && (
             <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
               {unreadMessages} Unread Messages
@@ -219,7 +220,7 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.slice(0, 8).map((stat, index) => {
+        {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <motion.div
@@ -271,36 +272,37 @@ const AdminDashboard = () => {
           </a>
         </div>
         <div className="space-y-4">
-          {Array.isArray(messages) && messages.slice(0, 5).map((message) => (
-            <div key={message._id} className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{message.name}</h3>
-                  {!message.isRead && (
-                    <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs rounded-full">
-                      New
-                    </span>
-                  )}
-                  {message.isReplied && (
-                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full">
-                      Replied
-                    </span>
-                  )}
+          {messages.length > 0 ? (
+            messages.slice(0, 5).map((message) => (
+              <div key={message._id} className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold">{message.name}</h3>
+                    {!message.isRead && (
+                      <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs rounded-full">
+                        New
+                      </span>
+                    )}
+                    {message.isReplied && (
+                      <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full">
+                        Replied
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{message.subject}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    {new Date(message.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{message.subject}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  {new Date(message.createdAt).toLocaleDateString()}
-                </p>
+                <a
+                  href={`/admin/messages`}
+                  className="text-primary-500 hover:text-primary-600 text-sm ml-4"
+                >
+                  View →
+                </a>
               </div>
-              <a
-                href={`/admin/messages`}
-                className="text-primary-500 hover:text-primary-600 text-sm ml-4"
-              >
-                View →
-              </a>
-            </div>
-          ))}
-          {(!messages || messages.length === 0) && (
+            ))
+          ) : (
             <p className="text-gray-500 dark:text-gray-400 text-center py-4">
               No messages yet
             </p>
