@@ -12,7 +12,11 @@ import {
   FaUsers,
   FaEye,
   FaHeart,
-  FaChartLine
+  FaChartLine,
+  FaCertificate,
+  FaBriefcase,
+  FaGraduationCap,
+  FaCog
 } from 'react-icons/fa';
 import { Line, Bar } from 'react-chartjs-2';
 import {
@@ -25,7 +29,8 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ArcElement
 } from 'chart.js';
 
 ChartJS.register(
@@ -34,6 +39,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -41,7 +47,7 @@ ChartJS.register(
 );
 
 const AdminDashboard = () => {
-  const { projects, blogs, research, skills, certificates } = useContext(DataContext);
+  const { projects, blogs, research, skills, certificates, experiences, educations, loading } = useContext(DataContext);
   const { user } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({
@@ -67,8 +73,8 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const { data } = await axios.get('/api/blogs');
-      const totalViews = data.reduce((sum, blog) => sum + blog.views, 0);
-      const totalLikes = data.reduce((sum, blog) => sum + blog.likes, 0);
+      const totalViews = data.reduce((sum, blog) => sum + (blog.views || 0), 0);
+      const totalLikes = data.reduce((sum, blog) => sum + (blog.likes || 0), 0);
       setStats({ totalViews, totalLikes, monthlyData: [] });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -76,28 +82,45 @@ const AdminDashboard = () => {
   };
 
   const statCards = [
-    { title: 'Projects', value: projects?.length || 0, icon: FaProjectDiagram, color: 'bg-blue-500' },
-    { title: 'Blog Posts', value: blogs?.length || 0, icon: FaBlog, color: 'bg-green-500' },
-    { title: 'Research Papers', value: research?.length || 0, icon: FaFlask, color: 'bg-purple-500' },
-    { title: 'Skills', value: skills?.length || 0, icon: FaCode, color: 'bg-yellow-500' },
-    { title: 'Certificates', value: certificates?.length || 0, icon: FaCertificate, color: 'bg-pink-500' },
-    { title: 'Messages', value: messages?.length || 0, icon: FaEnvelope, color: 'bg-red-500' },
-    { title: 'Total Views', value: stats.totalViews, icon: FaEye, color: 'bg-indigo-500' },
-    { title: 'Total Likes', value: stats.totalLikes, icon: FaHeart, color: 'bg-orange-500' },
+    { title: 'Projects', value: projects?.length || 0, icon: FaProjectDiagram, color: 'bg-blue-500', link: '/admin/projects' },
+    { title: 'Blog Posts', value: blogs?.length || 0, icon: FaBlog, color: 'bg-green-500', link: '/admin/blogs' },
+    { title: 'Research Papers', value: research?.length || 0, icon: FaFlask, color: 'bg-purple-500', link: '/admin/research' },
+    { title: 'Skills', value: skills?.length || 0, icon: FaCode, color: 'bg-yellow-500', link: '/admin/skills' },
+    { title: 'Certificates', value: certificates?.length || 0, icon: FaCertificate, color: 'bg-pink-500', link: '/admin/certificates' },
+    { title: 'Experiences', value: experiences?.length || 0, icon: FaBriefcase, color: 'bg-indigo-500', link: '/admin/experiences' },
+    { title: 'Education', value: educations?.length || 0, icon: FaGraduationCap, color: 'bg-teal-500', link: '/admin/educations' },
+    { title: 'Messages', value: messages?.length || 0, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
+    { title: 'Total Views', value: stats.totalViews, icon: FaEye, color: 'bg-indigo-500', link: '/admin/blogs' },
+    { title: 'Total Likes', value: stats.totalLikes, icon: FaHeart, color: 'bg-orange-500', link: '/admin/blogs' },
   ];
 
   const unreadMessages = messages?.filter(m => !m.isRead).length || 0;
   const unpublishedBlogs = blogs?.filter(b => !b.isPublished).length || 0;
 
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  // Prepare chart data
+  const last7Days = [...Array(7)].map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }).reverse();
+
+  const lineChartData = {
+    labels: last7Days,
     datasets: [
       {
         label: 'Blog Views',
-        data: [65, 59, 80, 81, 56, 55, 40, 70, 85, 90, 95, 100],
+        data: stats.monthlyData.length ? stats.monthlyData : [65, 59, 80, 81, 56, 55, 40],
         fill: true,
         borderColor: 'rgb(99, 102, 241)',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        tension: 0.4,
+      },
+      {
+        label: 'Blog Likes',
+        data: [28, 48, 40, 19, 86, 27, 90],
+        fill: true,
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
         tension: 0.4,
       },
     ],
@@ -105,13 +128,14 @@ const AdminDashboard = () => {
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
       },
       title: {
         display: true,
-        text: 'Blog Views Overview',
+        text: 'Blog Analytics (Last 7 Days)',
       },
     },
   };
@@ -133,12 +157,14 @@ const AdminDashboard = () => {
           'rgba(168, 85, 247, 0.8)',
           'rgba(249, 115, 22, 0.8)',
         ],
+        borderRadius: 8,
       },
     ],
   };
 
   const barOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
@@ -150,6 +176,14 @@ const AdminDashboard = () => {
     },
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -160,18 +194,22 @@ const AdminDashboard = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
-            {unreadMessages} Unread Messages
-          </div>
-          <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm">
-            {unpublishedBlogs} Draft Blogs
-          </div>
+          {unreadMessages > 0 && (
+            <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
+              {unreadMessages} Unread Messages
+            </div>
+          )}
+          {unpublishedBlogs > 0 && (
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm">
+              {unpublishedBlogs} Draft Blogs
+            </div>
+          )}
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.slice(0, 8).map((stat, index) => {
           const Icon = stat.icon;
           return (
             <motion.div
@@ -179,17 +217,19 @@ const AdminDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.title}</p>
-                  <p className="text-3xl font-bold mt-1">{stat.value}</p>
+              <a href={stat.link} className="block p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.title}</p>
+                    <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                  </div>
+                  <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center`}>
+                    <Icon className="text-white text-xl" />
+                  </div>
                 </div>
-                <div className={`${stat.color} p-3 rounded-full`}>
-                  <Icon className="text-white text-xl" />
-                </div>
-              </div>
+              </a>
             </motion.div>
           );
         })}
@@ -198,28 +238,42 @@ const AdminDashboard = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Blog Views Trend</h2>
-          <Line data={chartData} options={chartOptions} />
+          <h2 className="text-xl font-bold mb-4">Blog Analytics</h2>
+          <div className="h-80">
+            <Line data={lineChartData} options={chartOptions} />
+          </div>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4">Projects Distribution</h2>
-          <Bar data={categoryData} options={barOptions} />
+          <div className="h-80">
+            <Bar data={categoryData} options={barOptions} />
+          </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Messages */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">Recent Messages</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Recent Messages</h2>
+          <a href="/admin/messages" className="text-primary-500 hover:text-primary-600 text-sm">
+            View All →
+          </a>
+        </div>
         <div className="space-y-4">
           {messages?.slice(0, 5).map((message) => (
             <div key={message._id} className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold">{message.name}</h3>
                   {!message.isRead && (
                     <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs rounded-full">
                       New
+                    </span>
+                  )}
+                  {message.isReplied && (
+                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full">
+                      Replied
                     </span>
                   )}
                 </div>
@@ -230,7 +284,7 @@ const AdminDashboard = () => {
               </div>
               <a
                 href={`/admin/messages`}
-                className="text-primary-500 hover:text-primary-600 text-sm"
+                className="text-primary-500 hover:text-primary-600 text-sm ml-4"
               >
                 View →
               </a>
