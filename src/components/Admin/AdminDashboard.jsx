@@ -15,51 +15,27 @@ import {
   FaBriefcase,
   FaGraduationCap
 } from 'react-icons/fa';
-import { Line, Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  ArcElement
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 const AdminDashboard = () => {
   const { projects, blogs, research, skills, certificates, experiences, educations, loading } = useContext(DataContext);
   const { user } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
-  const [stats, setStats] = useState({
-    totalViews: 0,
-    totalLikes: 0
-  });
+  const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
 
-  // SAFETY: Ensure all data is array
-  const safeProjects = Array.isArray(projects) ? projects : [];
-  const safeBlogs = Array.isArray(blogs) ? blogs : [];
-  const safeResearch = Array.isArray(research) ? research : [];
-  const safeSkills = Array.isArray(skills) ? skills : [];
-  const safeCertificates = Array.isArray(certificates) ? certificates : [];
-  const safeExperiences = Array.isArray(experiences) ? experiences : [];
-  const safeEducations = Array.isArray(educations) ? educations : [];
+  // Helper function to safely get array length
+  const safeLength = (data) => {
+    return Array.isArray(data) ? data.length : 0;
+  };
+
+  // Helper function to safely filter
+  const safeFilter = (data, filterFn) => {
+    return Array.isArray(data) ? data.filter(filterFn) : [];
+  };
+
+  // Helper function to safely reduce
+  const safeReduce = (data, reduceFn, initialValue) => {
+    return Array.isArray(data) ? data.reduce(reduceFn, initialValue) : initialValue;
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -81,14 +57,8 @@ const AdminDashboard = () => {
       const { data } = await axios.get('/api/blogs');
       const blogData = Array.isArray(data) ? data : [];
       
-      // SAFETY: Use reduce only on array
-      const totalViews = blogData.length > 0 
-        ? blogData.reduce((sum, blog) => sum + (blog?.views || 0), 0)
-        : 0;
-      
-      const totalLikes = blogData.length > 0 
-        ? blogData.reduce((sum, blog) => sum + (blog?.likes || 0), 0)
-        : 0;
+      const totalViews = safeReduce(blogData, (sum, blog) => sum + (blog?.views || 0), 0);
+      const totalLikes = safeReduce(blogData, (sum, blog) => sum + (blog?.likes || 0), 0);
       
       setStats({ totalViews, totalLikes });
     } catch (error) {
@@ -97,95 +67,32 @@ const AdminDashboard = () => {
     }
   };
 
+  // Safe values
+  const projectsCount = safeLength(projects);
+  const blogsCount = safeLength(blogs);
+  const researchCount = safeLength(research);
+  const skillsCount = safeLength(skills);
+  const certificatesCount = safeLength(certificates);
+  const experiencesCount = safeLength(experiences);
+  const educationsCount = safeLength(educations);
+  const messagesCount = safeLength(messages);
+  
+  // Safe filtered counts
+  const unreadMessages = safeFilter(messages, m => m?.isRead === false).length;
+  const unpublishedBlogs = safeFilter(blogs, b => b?.isPublished === false).length;
+
   const statCards = [
-    { title: 'Projects', value: safeProjects.length, icon: FaProjectDiagram, color: 'bg-blue-500', link: '/admin/projects' },
-    { title: 'Blog Posts', value: safeBlogs.length, icon: FaBlog, color: 'bg-green-500', link: '/admin/blogs' },
-    { title: 'Research Papers', value: safeResearch.length, icon: FaFlask, color: 'bg-purple-500', link: '/admin/research' },
-    { title: 'Skills', value: safeSkills.length, icon: FaCode, color: 'bg-yellow-500', link: '/admin/skills' },
-    { title: 'Certificates', value: safeCertificates.length, icon: FaCertificate, color: 'bg-pink-500', link: '/admin/certificates' },
-    { title: 'Experiences', value: safeExperiences.length, icon: FaBriefcase, color: 'bg-indigo-500', link: '/admin/experiences' },
-    { title: 'Education', value: safeEducations.length, icon: FaGraduationCap, color: 'bg-teal-500', link: '/admin/educations' },
-    { title: 'Messages', value: messages.length, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
+    { title: 'Projects', value: projectsCount, icon: FaProjectDiagram, color: 'bg-blue-500', link: '/admin/projects' },
+    { title: 'Blog Posts', value: blogsCount, icon: FaBlog, color: 'bg-green-500', link: '/admin/blogs' },
+    { title: 'Research Papers', value: researchCount, icon: FaFlask, color: 'bg-purple-500', link: '/admin/research' },
+    { title: 'Skills', value: skillsCount, icon: FaCode, color: 'bg-yellow-500', link: '/admin/skills' },
+    { title: 'Certificates', value: certificatesCount, icon: FaCertificate, color: 'bg-pink-500', link: '/admin/certificates' },
+    { title: 'Experiences', value: experiencesCount, icon: FaBriefcase, color: 'bg-indigo-500', link: '/admin/experiences' },
+    { title: 'Education', value: educationsCount, icon: FaGraduationCap, color: 'bg-teal-500', link: '/admin/educations' },
+    { title: 'Messages', value: messagesCount, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
     { title: 'Total Views', value: stats.totalViews, icon: FaEye, color: 'bg-indigo-500', link: '/admin/blogs' },
     { title: 'Total Likes', value: stats.totalLikes, icon: FaHeart, color: 'bg-orange-500', link: '/admin/blogs' },
   ];
-
-  // SAFETY: Filter only on arrays
-  const unreadMessages = messages.filter(m => m?.isRead === false).length;
-  const unpublishedBlogs = safeBlogs.filter(b => b?.isPublished === false).length;
-
-  // Chart Data
-  const lineChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        label: 'Blog Views',
-        data: [65, 59, 80, 81, 56, 55, 40, 70, 85, 90, 95, 100],
-        fill: true,
-        borderColor: 'rgb(99, 102, 241)',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        tension: 0.4,
-      },
-      {
-        label: 'Blog Likes',
-        data: [28, 48, 40, 19, 86, 27, 90, 45, 70, 65, 80, 85],
-        fill: true,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Blog Analytics Overview',
-      },
-    },
-  };
-
-  const categoryData = {
-    labels: ['Web', 'Mobile', 'AI/ML', 'Other'],
-    datasets: [
-      {
-        label: 'Projects by Category',
-        data: [
-          safeProjects.filter(p => p?.category === 'web').length,
-          safeProjects.filter(p => p?.category === 'mobile').length,
-          safeProjects.filter(p => p?.category === 'ai').length,
-          safeProjects.filter(p => p?.category === 'other').length,
-        ],
-        backgroundColor: [
-          'rgba(99, 102, 241, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(249, 115, 22, 0.8)',
-        ],
-        borderRadius: 8,
-      },
-    ],
-  };
-
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Projects by Category',
-      },
-    },
-  };
 
   if (loading) {
     return (
@@ -246,23 +153,6 @@ const AdminDashboard = () => {
         })}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Blog Analytics</h2>
-          <div className="h-80">
-            <Line data={lineChartData} options={chartOptions} />
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Projects Distribution</h2>
-          <div className="h-80">
-            <Bar data={categoryData} options={barOptions} />
-          </div>
-        </div>
-      </div>
-
       {/* Recent Messages */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
@@ -272,7 +162,7 @@ const AdminDashboard = () => {
           </a>
         </div>
         <div className="space-y-4">
-          {messages.length > 0 ? (
+          {messagesCount > 0 ? (
             messages.slice(0, 5).map((message) => (
               <div key={message._id} className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
                 <div className="flex-1">
