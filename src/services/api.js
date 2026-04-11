@@ -8,7 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds timeout
+  timeout: 30000,
 });
 
 // Add a request interceptor to include auth token
@@ -27,7 +27,9 @@ api.interceptors.request.use(
 
 // Add a response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
@@ -35,9 +37,7 @@ api.interceptors.response.use(
         window.location.href = '/admin/login';
       }
     }
-    if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout - server might be down');
-    }
+    console.error('API Error:', error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
 );
