@@ -40,3 +40,97 @@
   background-size: 200% 200%;
   animation: gradient 8s linear infinite;
 }
+
+/* Add to frontend/src/index.css */
+.admin-content {
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  max-height: calc(100vh - 2rem);
+}
+
+/* Custom scrollbar for admin panel */
+.admin-layout aside::-webkit-scrollbar,
+.admin-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-layout aside::-webkit-scrollbar-track,
+.admin-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.admin-layout aside::-webkit-scrollbar-thumb,
+.admin-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.admin-layout aside::-webkit-scrollbar-thumb:hover,
+.admin-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Dark mode scrollbar */
+.dark .admin-layout aside::-webkit-scrollbar-track,
+.dark .admin-content::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .admin-layout aside::-webkit-scrollbar-thumb,
+.dark .admin-content::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark .admin-layout aside::-webkit-scrollbar-thumb:hover,
+.dark .admin-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Fix for admin panel content being hidden behind navbar */
+.admin-main {
+  padding-top: 4rem; /* 64px for mobile navbar */
+}
+
+@media (min-width: 1024px) {
+  .admin-main {
+    padding-top: 1.5rem; /* 24px for desktop */
+  }
+}
+
+/* Ensure all admin content has proper spacing */
+.admin-content-wrapper {
+  min-height: calc(100vh - 6rem);
+}
+
+/* Fix for buttons in admin panels */
+.admin-action-buttons {
+  position: sticky;
+  top: 1rem;
+  z-index: 10;
+  background-color: inherit;
+  padding: 0.5rem 0;
+}
+
+/* Quick fix for all admin pages */
+[class*="Manager"] > div:first-child {
+  position: sticky;
+  top: 4rem;
+  background: inherit;
+  z-index: 5;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+@media (min-width: 1024px) {
+  [class*="Manager"] > div:first-child {
+    top: 0;
+  }
+}
+
+/* Dark mode support */
+.dark [class*="Manager"] > div:first-child {
+  border-bottom-color: #374151;
+}
