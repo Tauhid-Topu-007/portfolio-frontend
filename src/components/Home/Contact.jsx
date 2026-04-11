@@ -25,9 +25,9 @@ const Contact = () => {
   };
 
   const contactInfo = [
-    { icon: FaEnvelope, title: 'Email', value: settings?.contactEmail || 'contact@example.com', link: `mailto:${settings?.contactEmail || 'contact@example.com'}` },
-    { icon: FaPhone, title: 'Phone', value: settings?.contactPhone || '+1234567890', link: `tel:${settings?.contactPhone || '+1234567890'}` },
-    { icon: FaMapMarkerAlt, title: 'Location', value: settings?.address || 'New York, USA', link: null },
+    { icon: FaEnvelope, title: 'Email', value: settings?.contactEmail || 't.topu021@gmail.com', link: `mailto:${settings?.contactEmail || 't.topu021@gmail.com'}` },
+    { icon: FaPhone, title: 'Phone', value: settings?.contactPhone || '+8801400522994', link: `tel:${settings?.contactPhone || '+8801400522994'}` },
+    { icon: FaMapMarkerAlt, title: 'Location', value: settings?.address || 'Uttara, Dhaka Bangladesh', link: null },
     { icon: FaClock, title: 'Working Hours', value: 'Mon-Fri: 9AM - 6PM', link: null },
   ];
 
