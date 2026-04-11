@@ -134,3 +134,13 @@
 .dark [class*="Manager"] > div:first-child {
   border-bottom-color: #374151;
 }
+
+/* Profile image hover effect */
+.group:hover .group-hover\:scale-105 {
+  transform: scale(1.05);
+}
+
+/* Background overlay for hero section */
+.bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.5);
+}

@@ -56,6 +56,10 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const refetch = () => {
+    fetchAllData();
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -68,7 +72,7 @@ export const DataProvider = ({ children }) => {
         research,
         settings,
         loading,
-        refetch: fetchAllData,
+        refetch,
       }}
     >
       {children}
