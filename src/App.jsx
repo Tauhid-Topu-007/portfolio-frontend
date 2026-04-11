@@ -22,6 +22,8 @@ import ResearchPage from './pages/ResearchPage';
 import ContactPage from './pages/ContactPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/AdminPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Wrapper component to use useLocation hook
 function AppContent() {
@@ -47,6 +49,9 @@ function AppContent() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/*" element={<AdminPage />} />
+          {/* Forgot password routes */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         </Routes>
         {/* Only show Footer on non-admin routes */}
         {!isAdminRoute && <Footer />}

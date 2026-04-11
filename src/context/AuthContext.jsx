@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export const AuthContext = createContext();
@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
     } else {
       setLoading(false);
@@ -19,11 +20,12 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const { data } = await api.get('/auth/profile');
+      const { data } = await axios.get('/api/auth/profile');
       setUser(data);
     } catch (error) {
       console.error('Error fetching user:', error);
       localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
     } finally {
       setLoading(false);
     }
@@ -31,19 +33,36 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const { data } = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', data.token);
-      setUser(data);
-      toast.success('Login successful!');
-      return true;
+      console.log('Attempting login with:', email);
+      
+      const response = await axios.post('/api/auth/login', { 
+        email, 
+        password 
+      });
+      
+      console.log('Login response:', response.data);
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        setUser(response.data);
+        toast.success('Login successful!');
+        return true;
+      } else {
+        toast.error('Invalid response from server');
+        return false;
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Login error:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      toast.error(errorMessage);
       return false;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     toast.success('Logged out successfully');
   };
