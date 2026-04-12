@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Get the API URL from environment variables
-const API_URL = 'https://portfolio-backend-1-qj6w.onrender.com';
+// Use environment variable or fallback
+const API_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend-1-qj6w.onrender.com';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -11,33 +11,33 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Add a request interceptor to include auth token
+// Add request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add a response interceptor for error handling
+// Add response interceptor
 api.interceptors.response.use(
   (response) => {
+    console.log(`API Response: ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
+    console.error('API Error:', error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       if (window.location.pathname !== '/admin/login') {
         window.location.href = '/admin/login';
       }
     }
-    console.error('API Error:', error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
 );

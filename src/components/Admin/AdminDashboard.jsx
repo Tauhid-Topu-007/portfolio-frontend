@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { DataContext } from '../../context/DataContext';
 import { AuthContext } from '../../context/AuthContext';
 import axios from 'axios';
@@ -22,26 +21,6 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
 
-  // Helper function to ensure data is an array
-  const ensureArray = (data) => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    // If it's an object with data property
-    if (data.data && Array.isArray(data.data)) return data.data;
-    // If it's an object, try to get values
-    if (typeof data === 'object') return Object.values(data);
-    return [];
-  };
-
-  // Get safe arrays
-  const safeProjects = ensureArray(projects);
-  const safeBlogs = ensureArray(blogs);
-  const safeResearch = ensureArray(research);
-  const safeSkills = ensureArray(skills);
-  const safeCertificates = ensureArray(certificates);
-  const safeExperiences = ensureArray(experiences);
-  const safeEducations = ensureArray(educations);
-
   useEffect(() => {
     fetchMessages();
     fetchStats();
@@ -51,10 +30,14 @@ const AdminDashboard = () => {
     try {
       const response = await axios.get('/api/messages');
       const data = response.data;
-      if (Array.isArray(data)) {
-        setMessages(data);
-      } else if (data && data.data && Array.isArray(data.data)) {
-        setMessages(data.data);
+      if (data && typeof data === 'object') {
+        if (Array.isArray(data)) {
+          setMessages(data);
+        } else if (data.data && Array.isArray(data.data)) {
+          setMessages(data.data);
+        } else {
+          setMessages([]);
+        }
       } else {
         setMessages([]);
       }
@@ -67,91 +50,64 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const response = await axios.get('/api/blogs');
-      let blogData = [];
+      const data = response.data;
+      let blogArray = [];
       
-      if (Array.isArray(response.data)) {
-        blogData = response.data;
-      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        blogData = response.data.data;
+      if (Array.isArray(data)) {
+        blogArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        blogArray = data.data;
       }
       
-      let totalViews = 0;
-      let totalLikes = 0;
-      
-      // Simple for loop - no reduce
-      for (let i = 0; i < blogData.length; i++) {
-        const blog = blogData[i];
-        if (blog) {
-          totalViews = totalViews + (blog.views || 0);
-          totalLikes = totalLikes + (blog.likes || 0);
+      let views = 0;
+      let likes = 0;
+      for (let i = 0; i < blogArray.length; i++) {
+        const item = blogArray[i];
+        if (item) {
+          views += item.views || 0;
+          likes += item.likes || 0;
         }
       }
-      
-      setStats({ totalViews: totalViews, totalLikes: totalLikes });
+      setStats({ totalViews: views, totalLikes: likes });
     } catch (error) {
       console.error('Error fetching stats:', error);
       setStats({ totalViews: 0, totalLikes: 0 });
     }
   };
 
-  // Calculate counts using simple loops
-  let projectsCount = 0;
-  if (safeProjects && typeof safeProjects === 'object') {
-    projectsCount = Array.isArray(safeProjects) ? safeProjects.length : Object.keys(safeProjects).length;
-  }
-  
-  let blogsCount = 0;
-  if (safeBlogs && typeof safeBlogs === 'object') {
-    blogsCount = Array.isArray(safeBlogs) ? safeBlogs.length : Object.keys(safeBlogs).length;
-  }
-  
-  let researchCount = 0;
-  if (safeResearch && typeof safeResearch === 'object') {
-    researchCount = Array.isArray(safeResearch) ? safeResearch.length : Object.keys(safeResearch).length;
-  }
-  
-  let skillsCount = 0;
-  if (safeSkills && typeof safeSkills === 'object') {
-    skillsCount = Array.isArray(safeSkills) ? safeSkills.length : Object.keys(safeSkills).length;
-  }
-  
-  let certificatesCount = 0;
-  if (safeCertificates && typeof safeCertificates === 'object') {
-    certificatesCount = Array.isArray(safeCertificates) ? safeCertificates.length : Object.keys(safeCertificates).length;
-  }
-  
-  let experiencesCount = 0;
-  if (safeExperiences && typeof safeExperiences === 'object') {
-    experiencesCount = Array.isArray(safeExperiences) ? safeExperiences.length : Object.keys(safeExperiences).length;
-  }
-  
-  let educationsCount = 0;
-  if (safeEducations && typeof safeEducations === 'object') {
-    educationsCount = Array.isArray(safeEducations) ? safeEducations.length : Object.keys(safeEducations).length;
-  }
-  
-  let messagesCount = 0;
-  if (messages && Array.isArray(messages)) {
-    messagesCount = messages.length;
-  }
-  
-  // Calculate unread messages using simple loop
+  // Safe count functions
+  const getCount = (data) => {
+    if (!data) return 0;
+    if (Array.isArray(data)) return data.length;
+    if (data.data && Array.isArray(data.data)) return data.data.length;
+    return 0;
+  };
+
+  const projectsCount = getCount(projects);
+  const blogsCount = getCount(blogs);
+  const researchCount = getCount(research);
+  const skillsCount = getCount(skills);
+  const certificatesCount = getCount(certificates);
+  const experiencesCount = getCount(experiences);
+  const educationsCount = getCount(educations);
+  const messagesCount = getCount(messages);
+
+  // Safe unread messages count
   let unreadMessages = 0;
   if (messages && Array.isArray(messages)) {
     for (let i = 0; i < messages.length; i++) {
       if (messages[i] && messages[i].isRead === false) {
-        unreadMessages = unreadMessages + 1;
+        unreadMessages++;
       }
     }
   }
-  
-  // Calculate unpublished blogs using simple loop
+
+  // Safe unpublished blogs count
   let unpublishedBlogs = 0;
-  if (safeBlogs && Array.isArray(safeBlogs)) {
-    for (let i = 0; i < safeBlogs.length; i++) {
-      if (safeBlogs[i] && safeBlogs[i].isPublished === false) {
-        unpublishedBlogs = unpublishedBlogs + 1;
-      }
+  const blogsArray = Array.isArray(blogs) ? blogs : (blogs?.data || []);
+  for (let i = 0; i < blogsArray.length; i++) {
+    if (blogsArray[i] && blogsArray[i].isPublished === false) {
+      unpublishedBlogs++;
     }
   }
 
@@ -170,108 +126,112 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+        <div style={{ 
+          width: '48px', 
+          height: '48px', 
+          border: '4px solid #e2e8f0', 
+          borderTop: '4px solid #6366f1', 
+          borderRadius: '50%', 
+          animation: 'spin 1s linear infinite' 
+        }} />
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-4">
+    <div style={{ padding: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: '24px' }}>
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Welcome back, {user?.name || 'Admin'}!
-          </p>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>Dashboard</h1>
+          <p style={{ color: '#666', marginTop: '4px' }}>Welcome back, {user?.name || 'Admin'}!</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {unreadMessages > 0 && (
-            <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
+            <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '4px 12px', borderRadius: '9999px', fontSize: '14px' }}>
               {unreadMessages} Unread Messages
             </div>
           )}
           {unpublishedBlogs > 0 && (
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm">
+            <div style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: '9999px', fontSize: '14px' }}>
               {unpublishedBlogs} Draft Blogs
             </div>
           )}
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <motion.div
+            <a 
               key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              href={stat.link}
+              style={{ 
+                backgroundColor: '#fff', 
+                borderRadius: '12px', 
+                padding: '24px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+              }}
             >
-              <a href={stat.link} className="block p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-1">{stat.value}</p>
-                  </div>
-                  <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center`}>
-                    <Icon className="text-white text-xl" />
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>{stat.title}</p>
+                  <p style={{ fontSize: '32px', fontWeight: 'bold', margin: '8px 0 0 0' }}>{stat.value}</p>
                 </div>
-              </a>
-            </motion.div>
+                <div style={{ backgroundColor: stat.color, width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon style={{ color: '#fff', fontSize: '24px' }} />
+                </div>
+              </div>
+            </a>
           );
         })}
       </div>
 
-      {/* Recent Messages */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Recent Messages</h2>
-          <a href="/admin/messages" className="text-primary-500 hover:text-primary-600 text-sm">
-            View All →
-          </a>
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Recent Messages</h2>
+          <a href="/admin/messages" style={{ color: '#6366f1', textDecoration: 'none', fontSize: '14px' }}>View All →</a>
         </div>
-        <div className="space-y-4">
-          {messagesCount > 0 ? (
-            messages.slice(0, 5).map((message) => (
-              <div key={message._id} className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold">{message.name}</h3>
-                    {!message.isRead && (
-                      <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs rounded-full">
-                        New
-                      </span>
-                    )}
-                    {message.isReplied && (
-                      <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full">
-                        Replied
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{message.subject}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                    {new Date(message.createdAt).toLocaleDateString()}
-                  </p>
+        {messagesCount > 0 ? (
+          messages.slice(0, 5).map((message) => (
+            <div key={message._id} style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                  <strong>{message.name}</strong>
+                  {!message.isRead && (
+                    <span style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px' }}>New</span>
+                  )}
+                  {message.isReplied && (
+                    <span style={{ backgroundColor: '#dcfce7', color: '#16a34a', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px' }}>Replied</span>
+                  )}
                 </div>
-                <a
-                  href={`/admin/messages`}
-                  className="text-primary-500 hover:text-primary-600 text-sm ml-4"
-                >
-                  View →
-                </a>
+                <p style={{ margin: '4px 0', color: '#666', fontSize: '14px' }}>{message.subject}</p>
+                <p style={{ margin: '4px 0', color: '#999', fontSize: '12px' }}>{new Date(message.createdAt).toLocaleDateString()}</p>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-              No messages yet
-            </p>
-          )}
-        </div>
+              <a href="/admin/messages" style={{ color: '#6366f1', textDecoration: 'none', fontSize: '14px' }}>View →</a>
+            </div>
+          ))
+        ) : (
+          <p style={{ textAlign: 'center', color: '#666', padding: '32px' }}>No messages yet</p>
+        )}
       </div>
     </div>
   );
