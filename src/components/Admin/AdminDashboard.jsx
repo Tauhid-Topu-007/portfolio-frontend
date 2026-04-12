@@ -22,20 +22,21 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
 
-  // Helper function to safely get array length
-  const safeLength = (data) => {
-    return Array.isArray(data) ? data.length : 0;
+  // Helper function to safely get data as array
+  const asArray = (data) => {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
   };
 
-  // Helper function to safely filter
-  const safeFilter = (data, filterFn) => {
-    return Array.isArray(data) ? data.filter(filterFn) : [];
-  };
-
-  // Helper function to safely reduce
-  const safeReduce = (data, reduceFn, initialValue) => {
-    return Array.isArray(data) ? data.reduce(reduceFn, initialValue) : initialValue;
-  };
+  // Get safe arrays
+  const safeProjects = asArray(projects);
+  const safeBlogs = asArray(blogs);
+  const safeResearch = asArray(research);
+  const safeSkills = asArray(skills);
+  const safeCertificates = asArray(certificates);
+  const safeExperiences = asArray(experiences);
+  const safeEducations = asArray(educations);
 
   useEffect(() => {
     fetchMessages();
@@ -45,7 +46,7 @@ const AdminDashboard = () => {
   const fetchMessages = async () => {
     try {
       const { data } = await axios.get('/api/messages');
-      setMessages(Array.isArray(data) ? data : []);
+      setMessages(asArray(data));
     } catch (error) {
       console.error('Error fetching messages:', error);
       setMessages([]);
@@ -55,10 +56,15 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const { data } = await axios.get('/api/blogs');
-      const blogData = Array.isArray(data) ? data : [];
+      const blogData = asArray(data);
       
-      const totalViews = safeReduce(blogData, (sum, blog) => sum + (blog?.views || 0), 0);
-      const totalLikes = safeReduce(blogData, (sum, blog) => sum + (blog?.likes || 0), 0);
+      let totalViews = 0;
+      let totalLikes = 0;
+      
+      for (let i = 0; i < blogData.length; i++) {
+        totalViews += blogData[i]?.views || 0;
+        totalLikes += blogData[i]?.likes || 0;
+      }
       
       setStats({ totalViews, totalLikes });
     } catch (error) {
@@ -67,19 +73,26 @@ const AdminDashboard = () => {
     }
   };
 
-  // Safe values
-  const projectsCount = safeLength(projects);
-  const blogsCount = safeLength(blogs);
-  const researchCount = safeLength(research);
-  const skillsCount = safeLength(skills);
-  const certificatesCount = safeLength(certificates);
-  const experiencesCount = safeLength(experiences);
-  const educationsCount = safeLength(educations);
-  const messagesCount = safeLength(messages);
+  // Calculate counts safely
+  const projectsCount = safeProjects.length;
+  const blogsCount = safeBlogs.length;
+  const researchCount = safeResearch.length;
+  const skillsCount = safeSkills.length;
+  const certificatesCount = safeCertificates.length;
+  const experiencesCount = safeExperiences.length;
+  const educationsCount = safeEducations.length;
+  const messagesCount = messages.length;
   
-  // Safe filtered counts
-  const unreadMessages = safeFilter(messages, m => m?.isRead === false).length;
-  const unpublishedBlogs = safeFilter(blogs, b => b?.isPublished === false).length;
+  // Calculate filtered counts safely
+  let unreadMessages = 0;
+  for (let i = 0; i < messages.length; i++) {
+    if (messages[i]?.isRead === false) unreadMessages++;
+  }
+  
+  let unpublishedBlogs = 0;
+  for (let i = 0; i < safeBlogs.length; i++) {
+    if (safeBlogs[i]?.isPublished === false) unpublishedBlogs++;
+  }
 
   const statCards = [
     { title: 'Projects', value: projectsCount, icon: FaProjectDiagram, color: 'bg-blue-500', link: '/admin/projects' },
