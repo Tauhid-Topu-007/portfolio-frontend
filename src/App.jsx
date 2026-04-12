@@ -1,3 +1,7 @@
+// Force cache bust - v1.0.2 - Admin panel fix
+const APP_VERSION = '1.0.2';
+console.log('🚀 Portfolio App Version:', APP_VERSION);
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -29,6 +33,9 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+  
+  console.log('📍 Current path:', location.pathname);
+  console.log('🔐 Is admin route:', isAdminRoute);
   
   return (
     <>
@@ -62,6 +69,8 @@ function AppContent() {
 }
 
 function App() {
+  console.log('🎨 App rendering with version:', APP_VERSION);
+  
   return (
     <HelmetProvider>
       <ThemeProvider>
