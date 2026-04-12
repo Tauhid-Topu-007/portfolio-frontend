@@ -34,6 +34,7 @@ const ExperienceManager = () => {
     } catch (error) {
       console.error('Error fetching experiences:', error);
       toast.error('Failed to fetch experiences');
+      setExperiences([]);
     } finally {
       setLoading(false);
     }
@@ -113,6 +114,8 @@ const ExperienceManager = () => {
     setShowModal(true);
   };
 
+  const safeExperiences = Array.isArray(experiences) ? experiences : [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -136,7 +139,7 @@ const ExperienceManager = () => {
         </button>
       </div>
 
-      {experiences.length === 0 ? (
+      {safeExperiences.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
           <p className="text-gray-500">No experience entries yet. Click "Add Experience" to create one.</p>
         </div>
@@ -153,12 +156,12 @@ const ExperienceManager = () => {
               </tr>
             </thead>
             <tbody>
-              {experiences.map((exp) => (
+              {safeExperiences.map((exp) => (
                 <tr key={exp._id} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="px-6 py-4 font-medium">{exp.company}</td>
                   <td className="px-6 py-4">{exp.position}</td>
                   <td className="px-6 py-4">
-                    {moment(exp.startDate).format('MMM YYYY')} - {exp.isCurrent ? 'Present' : moment(exp.endDate).format('MMM YYYY')}
+                    {exp.startDate ? moment(exp.startDate).format('MMM YYYY') : 'N/A'} - {exp.isCurrent ? 'Present' : (exp.endDate ? moment(exp.endDate).format('MMM YYYY') : 'N/A')}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${exp.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

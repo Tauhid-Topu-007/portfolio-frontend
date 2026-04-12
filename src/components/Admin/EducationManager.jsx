@@ -34,6 +34,7 @@ const EducationManager = () => {
     } catch (error) {
       console.error('Error fetching educations:', error);
       toast.error('Failed to fetch educations');
+      setEducations([]);
     } finally {
       setLoading(false);
     }
@@ -112,6 +113,8 @@ const EducationManager = () => {
     setShowModal(true);
   };
 
+  const safeEducations = Array.isArray(educations) ? educations : [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -135,7 +138,7 @@ const EducationManager = () => {
         </button>
       </div>
 
-      {educations.length === 0 ? (
+      {safeEducations.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
           <p className="text-gray-500">No education entries yet. Click "Add Education" to create one.</p>
         </div>
@@ -152,12 +155,12 @@ const EducationManager = () => {
               </tr>
             </thead>
             <tbody>
-              {educations.map((edu) => (
+              {safeEducations.map((edu) => (
                 <tr key={edu._id} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="px-6 py-4 font-medium">{edu.institution}</td>
                   <td className="px-6 py-4">{edu.degree} in {edu.field}</td>
                   <td className="px-6 py-4">
-                    {moment(edu.startDate).format('YYYY')} - {edu.isCurrent ? 'Present' : moment(edu.endDate).format('YYYY')}
+                    {edu.startDate ? moment(edu.startDate).format('YYYY') : 'N/A'} - {edu.isCurrent ? 'Present' : (edu.endDate ? moment(edu.endDate).format('YYYY') : 'N/A')}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${edu.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -181,7 +184,7 @@ const EducationManager = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal - Keep same as before */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

@@ -33,6 +33,7 @@ const ResearchManager = () => {
     } catch (error) {
       console.error('Error fetching research:', error);
       toast.error('Failed to fetch research papers');
+      setResearch([]);
     } finally {
       setLoading(false);
     }
@@ -122,6 +123,8 @@ const ResearchManager = () => {
     setShowModal(true);
   };
 
+  const safeResearch = Array.isArray(research) ? research : [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -145,7 +148,7 @@ const ResearchManager = () => {
         </button>
       </div>
 
-      {research.length === 0 ? (
+      {safeResearch.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
           <p className="text-gray-500">No research papers yet. Click "Add Research Paper" to create one.</p>
         </div>
@@ -162,7 +165,7 @@ const ResearchManager = () => {
               </tr>
             </thead>
             <tbody>
-              {research.map((paper) => (
+              {safeResearch.map((paper) => (
                 <tr key={paper._id} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="px-6 py-4">
                     <div className="font-medium">{paper.title}</div>
@@ -170,7 +173,7 @@ const ResearchManager = () => {
                   </td>
                   <td className="px-6 py-4">{paper.authors?.slice(0, 2).join(', ')}{paper.authors?.length > 2 && '...'}</td>
                   <td className="px-6 py-4">{paper.publicationVenue}</td>
-                  <td className="px-6 py-4">{moment(paper.publicationDate).format('YYYY')}</td>
+                  <td className="px-6 py-4">{paper.publicationDate ? moment(paper.publicationDate).format('YYYY') : 'N/A'}</td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button onClick={() => editPaper(paper)} className="text-blue-500 hover:text-blue-700">
@@ -193,7 +196,7 @@ const ResearchManager = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal - Keep same as before */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

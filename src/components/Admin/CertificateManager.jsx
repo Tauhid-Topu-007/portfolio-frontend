@@ -34,6 +34,7 @@ const CertificateManager = () => {
     } catch (error) {
       console.error('Error fetching certificates:', error);
       toast.error('Failed to fetch certificates');
+      setCertificates([]);
     } finally {
       setLoading(false);
     }
@@ -126,6 +127,8 @@ const CertificateManager = () => {
     setShowModal(true);
   };
 
+  const safeCertificates = Array.isArray(certificates) ? certificates : [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -149,7 +152,7 @@ const CertificateManager = () => {
         </button>
       </div>
 
-      {certificates.length === 0 ? (
+      {safeCertificates.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
           <p className="text-gray-500">No certificates yet. Click "Add Certificate" to create one.</p>
         </div>
@@ -166,11 +169,11 @@ const CertificateManager = () => {
               </tr>
             </thead>
             <tbody>
-              {certificates.map((cert) => (
+              {safeCertificates.map((cert) => (
                 <tr key={cert._id} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="px-6 py-4 font-medium">{cert.title}</td>
                   <td className="px-6 py-4">{cert.issuer}</td>
-                  <td className="px-6 py-4">{moment(cert.issueDate).format('MMM YYYY')}</td>
+                  <td className="px-6 py-4">{cert.issueDate ? moment(cert.issueDate).format('MMM YYYY') : 'N/A'}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${cert.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {cert.isActive ? 'Active' : 'Inactive'}
@@ -198,7 +201,7 @@ const CertificateManager = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal - Keep same as before */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

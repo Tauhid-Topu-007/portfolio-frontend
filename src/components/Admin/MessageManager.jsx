@@ -22,6 +22,7 @@ const MessageManager = () => {
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('Failed to fetch messages');
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -69,6 +70,8 @@ const MessageManager = () => {
     }
   };
 
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -81,10 +84,10 @@ const MessageManager = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Messages</h1>
-        <div className="text-sm text-gray-500">Total: {messages.length} messages</div>
+        <div className="text-sm text-gray-500">Total: {safeMessages.length} messages</div>
       </div>
 
-      {messages.length === 0 ? (
+      {safeMessages.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
           <p className="text-gray-500">No messages yet.</p>
         </div>
@@ -101,7 +104,7 @@ const MessageManager = () => {
               </tr>
             </thead>
             <tbody>
-              {messages.map((message) => (
+              {safeMessages.map((message) => (
                 <tr key={message._id} className={`border-b border-gray-200 dark:border-gray-700 ${!message.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
                   <td className="px-6 py-4">
                     <div className="font-medium">{message.name}</div>
