@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { FaEdit, FaTrash, FaPlus, FaEye, FaTimes } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaTimes, FaEye } from 'react-icons/fa';
+import moment from 'moment';
 
 const BlogManager = () => {
   const [blogs, setBlogs] = useState([]);
@@ -25,8 +26,8 @@ const BlogManager = () => {
 
   const fetchBlogs = async () => {
     try {
-      const { data } = await axios.get('/api/blogs');
-      setBlogs(data);
+      const { data } = await api.get('/blogs');
+      setBlogs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching blogs:', error);
       toast.error('Failed to fetch blogs');
@@ -37,24 +38,30 @@ const BlogManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     const formDataToSend = new FormData();
-    Object.keys(formData).forEach(key => {
-      if (key === 'tags') {
-        formDataToSend.append(key, JSON.stringify(formData[key].split(',').map(t => t.trim())));
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
+    formDataToSend.append('title', formData.title);
+    formDataToSend.append('slug', formData.slug.toLowerCase().replace(/ /g, '-'));
+    formDataToSend.append('excerpt', formData.excerpt);
+    formDataToSend.append('content', formData.content);
+    formDataToSend.append('tags', JSON.stringify(formData.tags.split(',').map(t => t.trim())));
+    formDataToSend.append('category', formData.category);
+    formDataToSend.append('isPublished', formData.isPublished);
+    
     if (imageFile) {
       formDataToSend.append('featuredImage', imageFile);
     }
 
     try {
       if (editingBlog) {
-        await axios.put(`/api/blogs/${editingBlog._id}`, formDataToSend);
+        await api.put(`/blogs/${editingBlog._id}`, formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         toast.success('Blog updated successfully');
       } else {
-        await axios.post('/api/blogs', formDataToSend);
+        await api.post('/blogs', formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         toast.success('Blog created successfully');
       }
       fetchBlogs();
@@ -69,7 +76,7 @@ const BlogManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this blog?')) {
       try {
-        await axios.delete(`/api/blogs/${id}`);
+        await api.delete(`/blogs/${id}`);
         toast.success('Blog deleted successfully');
         fetchBlogs();
       } catch (error) {
@@ -96,20 +103,20 @@ const BlogManager = () => {
   const editBlog = (blog) => {
     setEditingBlog(blog);
     setFormData({
-      title: blog.title,
-      slug: blog.slug,
-      excerpt: blog.excerpt,
-      content: blog.content,
+      title: blog.title || '',
+      slug: blog.slug || '',
+      excerpt: blog.excerpt || '',
+      content: blog.content || '',
       tags: blog.tags?.join(', ') || '',
-      category: blog.category,
-      isPublished: blog.isPublished,
+      category: blog.category || 'General',
+      isPublished: blog.isPublished || false,
     });
     setShowModal(true);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
@@ -118,7 +125,7 @@ const BlogManager = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Blogs</h1>
+        <h1 className="text-2xl font-bold">Manage Blog Posts</h1>
         <button
           onClick={() => {
             resetForm();
@@ -126,60 +133,66 @@ const BlogManager = () => {
           }}
           className="btn-primary flex items-center gap-2"
         >
-          <FaPlus /> Add Blog
+          <FaPlus /> Add Blog Post
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Views</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {blogs.map((blog) => (
-              <tr key={blog._id}>
-                <td className="px-6 py-4">
-                  <div className="font-medium">{blog.title}</div>
-                  <div className="text-sm text-gray-500">{blog.slug}</div>
-                </td>
-                <td className="px-6 py-4">{blog.category}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${blog.isPublished ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {blog.isPublished ? 'Published' : 'Draft'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">{blog.views || 0}</td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <button onClick={() => editBlog(blog)} className="text-blue-500 hover:text-blue-700">
-                      <FaEdit />
-                    </button>
-                    <button onClick={() => handleDelete(blog._id)} className="text-red-500 hover:text-red-700">
-                      <FaTrash />
-                    </button>
-                    <a href={`/blog/${blog.slug}`} target="_blank" className="text-green-500 hover:text-green-700">
-                      <FaEye />
-                    </a>
-                  </div>
-                </td>
+      {blogs.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
+          <p className="text-gray-500">No blog posts yet. Click "Add Blog Post" to create one.</p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {blogs.map((blog) => (
+                <tr key={blog._id} className="border-b border-gray-200 dark:border-gray-700">
+                  <td className="px-6 py-4">
+                    <div className="font-medium">{blog.title}</div>
+                    <div className="text-sm text-gray-500">Slug: {blog.slug}</div>
+                  </td>
+                  <td className="px-6 py-4">{blog.category}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full ${blog.isPublished ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {blog.isPublished ? 'Published' : 'Draft'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">{moment(blog.createdAt).format('MMM DD, YYYY')}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => editBlog(blog)} className="text-blue-500 hover:text-blue-700">
+                        <FaEdit />
+                      </button>
+                      <button onClick={() => handleDelete(blog._id)} className="text-red-500 hover:text-red-700">
+                        <FaTrash />
+                      </button>
+                      <a href={`/blog/${blog.slug}`} target="_blank" className="text-green-500 hover:text-green-700">
+                        <FaEye />
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold">{editingBlog ? 'Edit Blog' : 'Add Blog'}</h2>
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-2xl font-bold">{editingBlog ? 'Edit Blog Post' : 'Add Blog Post'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
                 <FaTimes size={24} />
               </button>
@@ -193,7 +206,7 @@ const BlogManager = () => {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -204,29 +217,30 @@ const BlogManager = () => {
                   required
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/ /g, '-') })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
+                <p className="text-xs text-gray-500 mt-1">URL-friendly name (e.g., my-first-blog-post)</p>
               </div>
               
               <div>
                 <label className="block text-sm font-medium mb-2">Excerpt *</label>
                 <textarea
-                  required
                   rows={2}
+                  required
                   value={formData.excerpt}
                   onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Content *</label>
+                <label className="block text-sm font-medium mb-2">Content * (Markdown supported)</label>
                 <textarea
-                  required
                   rows={8}
+                  required
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 font-mono"
+                  className="w-full px-4 py-2 rounded-lg border font-mono"
                 />
               </div>
               
@@ -237,17 +251,17 @@ const BlogManager = () => {
                     type="text"
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    placeholder="react, javascript, webdev"
+                    className="w-full px-4 py-2 rounded-lg border"
                   />
                 </div>
-                
                 <div>
                   <label className="block text-sm font-medium mb-2">Category</label>
                   <input
                     type="text"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    className="w-full px-4 py-2 rounded-lg border"
                   />
                 </div>
               </div>
@@ -278,7 +292,7 @@ const BlogManager = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editingBlog ? 'Update' : 'Create'} Blog
+                  {editingBlog ? 'Update' : 'Create'} Blog Post
                 </button>
               </div>
             </form>

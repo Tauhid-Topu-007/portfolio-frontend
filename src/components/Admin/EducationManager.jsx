@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus, FaTimes } from 'react-icons/fa';
+import moment from 'moment';
 
 const EducationManager = () => {
   const [educations, setEducations] = useState([]);
@@ -28,8 +29,8 @@ const EducationManager = () => {
 
   const fetchEducations = async () => {
     try {
-      const { data } = await axios.get('/api/educations');
-      setEducations(data);
+      const { data } = await api.get('/educations');
+      setEducations(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching educations:', error);
       toast.error('Failed to fetch educations');
@@ -40,16 +41,18 @@ const EducationManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     const dataToSend = {
       ...formData,
       achievements: formData.achievements.split('\n').filter(a => a.trim()),
     };
+    
     try {
       if (editingEdu) {
-        await axios.put(`/api/educations/${editingEdu._id}`, dataToSend);
+        await api.put(`/educations/${editingEdu._id}`, dataToSend);
         toast.success('Education updated successfully');
       } else {
-        await axios.post('/api/educations', dataToSend);
+        await api.post('/educations', dataToSend);
         toast.success('Education created successfully');
       }
       fetchEducations();
@@ -64,7 +67,7 @@ const EducationManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this education?')) {
       try {
-        await axios.delete(`/api/educations/${id}`);
+        await api.delete(`/educations/${id}`);
         toast.success('Education deleted successfully');
         fetchEducations();
       } catch (error) {
@@ -94,24 +97,24 @@ const EducationManager = () => {
   const editEducation = (edu) => {
     setEditingEdu(edu);
     setFormData({
-      institution: edu.institution,
-      degree: edu.degree,
-      field: edu.field,
-      startDate: edu.startDate.split('T')[0],
+      institution: edu.institution || '',
+      degree: edu.degree || '',
+      field: edu.field || '',
+      startDate: edu.startDate ? edu.startDate.split('T')[0] : '',
       endDate: edu.endDate ? edu.endDate.split('T')[0] : '',
-      isCurrent: edu.isCurrent,
+      isCurrent: edu.isCurrent || false,
       grade: edu.grade || '',
       description: edu.description || '',
       achievements: edu.achievements?.join('\n') || '',
-      order: edu.order,
-      isActive: edu.isActive,
+      order: edu.order || 0,
+      isActive: edu.isActive !== undefined ? edu.isActive : true,
     });
     setShowModal(true);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
@@ -132,53 +135,57 @@ const EducationManager = () => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Institution</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Degree</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Period</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {educations.map((edu) => (
-              <tr key={edu._id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium">{edu.institution}</div>
-                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">{edu.degree} in {edu.field}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {new Date(edu.startDate).getFullYear()} - {edu.isCurrent ? 'Present' : new Date(edu.endDate).getFullYear()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full ${edu.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {edu.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex gap-2">
-                    <button onClick={() => editEducation(edu)} className="text-blue-500 hover:text-blue-700">
-                      <FaEdit />
-                    </button>
-                    <button onClick={() => handleDelete(edu._id)} className="text-red-500 hover:text-red-700">
-                      <FaTrash />
-                    </button>
-                  </div>
-                </td>
+      {educations.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
+          <p className="text-gray-500">No education entries yet. Click "Add Education" to create one.</p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institution</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Degree</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {educations.map((edu) => (
+                <tr key={edu._id} className="border-b border-gray-200 dark:border-gray-700">
+                  <td className="px-6 py-4">{edu.institution}</td>
+                  <td className="px-6 py-4">{edu.degree} in {edu.field}</td>
+                  <td className="px-6 py-4">
+                    {moment(edu.startDate).format('YYYY')} - {edu.isCurrent ? 'Present' : moment(edu.endDate).format('YYYY')}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full ${edu.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {edu.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => editEducation(edu)} className="text-blue-500 hover:text-blue-700">
+                        <FaEdit />
+                      </button>
+                      <button onClick={() => handleDelete(edu._id)} className="text-red-500 hover:text-red-700">
+                        <FaTrash />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-2xl font-bold">{editingEdu ? 'Edit Education' : 'Add Education'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
                 <FaTimes size={24} />
@@ -194,10 +201,9 @@ const EducationManager = () => {
                     required
                     value={formData.institution}
                     onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    className="w-full px-4 py-2 rounded-lg border"
                   />
                 </div>
-                
                 <div>
                   <label className="block text-sm font-medium mb-2">Degree *</label>
                   <input
@@ -205,7 +211,7 @@ const EducationManager = () => {
                     required
                     value={formData.degree}
                     onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    className="w-full px-4 py-2 rounded-lg border"
                   />
                 </div>
               </div>
@@ -217,7 +223,7 @@ const EducationManager = () => {
                   required
                   value={formData.field}
                   onChange={(e) => setFormData({ ...formData, field: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -229,10 +235,9 @@ const EducationManager = () => {
                     required
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    className="w-full px-4 py-2 rounded-lg border"
                   />
                 </div>
-                
                 <div>
                   <label className="block text-sm font-medium mb-2">End Date</label>
                   <input
@@ -240,7 +245,7 @@ const EducationManager = () => {
                     value={formData.endDate}
                     disabled={formData.isCurrent}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 disabled:opacity-50"
+                    className="w-full px-4 py-2 rounded-lg border disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -262,7 +267,7 @@ const EducationManager = () => {
                   type="text"
                   value={formData.grade}
                   onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -272,7 +277,7 @@ const EducationManager = () => {
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -282,29 +287,8 @@ const EducationManager = () => {
                   rows={3}
                   value={formData.achievements}
                   onChange={(e) => setFormData({ ...formData, achievements: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Order</label>
-                <input
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
-                />
-              </div>
-              
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  />
-                  <span>Active</span>
-                </label>
               </div>
               
               <div className="flex justify-end gap-3 pt-4">

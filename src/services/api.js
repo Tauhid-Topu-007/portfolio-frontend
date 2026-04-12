@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-// Get API URL from environment or use localhost for development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-console.log('🔧 API URL:', API_URL);
+const API_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend-1-qj6w.onrender.com';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -13,14 +10,14 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor - add token
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => Promise.reject(error)
@@ -34,11 +31,8 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      console.error('🔒 Unauthorized');
       localStorage.removeItem('token');
-      if (!window.location.pathname.includes('/admin/login')) {
-        window.location.href = '/admin/login';
-      }
+      window.location.href = '/admin/login';
     }
     return Promise.reject(error);
   }
