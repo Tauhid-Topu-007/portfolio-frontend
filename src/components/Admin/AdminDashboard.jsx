@@ -3,16 +3,8 @@ import { DataContext } from '../../context/DataContext';
 import { AuthContext } from '../../context/AuthContext';
 import axios from 'axios';
 import { 
-  FaProjectDiagram, 
-  FaBlog, 
-  FaFlask, 
-  FaCode, 
-  FaEnvelope,
-  FaEye,
-  FaHeart,
-  FaCertificate,
-  FaBriefcase,
-  FaGraduationCap
+  FaProjectDiagram, FaBlog, FaFlask, FaCode, FaEnvelope,
+  FaEye, FaHeart, FaCertificate, FaBriefcase, FaGraduationCap
 } from 'react-icons/fa';
 
 const AdminDashboard = () => {
@@ -21,7 +13,7 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
 
-  // SAFE: Ensure all data is array
+  // SAFETY: Ensure all data is array with fallbacks
   const safeProjects = Array.isArray(projects) ? projects : [];
   const safeBlogs = Array.isArray(blogs) ? blogs : [];
   const safeResearch = Array.isArray(research) ? research : [];
@@ -39,8 +31,8 @@ const AdminDashboard = () => {
     try {
       const { data } = await axios.get('/api/messages');
       setMessages(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
       setMessages([]);
     }
   };
@@ -49,20 +41,19 @@ const AdminDashboard = () => {
     try {
       const { data } = await axios.get('/api/blogs');
       const blogData = Array.isArray(data) ? data : [];
-      
-      let totalViews = 0;
-      let totalLikes = 0;
+      let totalViews = 0, totalLikes = 0;
       for (let i = 0; i < blogData.length; i++) {
         totalViews += blogData[i]?.views || 0;
         totalLikes += blogData[i]?.likes || 0;
       }
       setStats({ totalViews, totalLikes });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
       setStats({ totalViews: 0, totalLikes: 0 });
     }
   };
 
+  // Calculate counts safely
   const projectsCount = safeProjects.length;
   const blogsCount = safeBlogs.length;
   const researchCount = safeResearch.length;
@@ -72,11 +63,13 @@ const AdminDashboard = () => {
   const educationsCount = safeEducations.length;
   const messagesCount = messages.length;
 
+  // Calculate unread messages safely
   let unreadMessages = 0;
   for (let i = 0; i < messages.length; i++) {
     if (messages[i]?.isRead === false) unreadMessages++;
   }
 
+  // Calculate unpublished blogs safely
   let unpublishedBlogs = 0;
   for (let i = 0; i < safeBlogs.length; i++) {
     if (safeBlogs[i]?.isPublished === false) unpublishedBlogs++;
@@ -125,7 +118,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <a key={stat.title} href={stat.link} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block">

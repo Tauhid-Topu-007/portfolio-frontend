@@ -10,10 +10,20 @@ export default defineConfig({
         target: 'https://portfolio-backend-1-qj6w.onrender.com',
         changeOrigin: true,
         secure: true,
+      },
+      '/uploads': {
+        target: 'https://portfolio-backend-1-qj6w.onrender.com',
+        changeOrigin: true,
       }
     }
   },
-  define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('https://portfolio-backend-1-qj6w.onrender.com')
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name].[hash].js`,
+        chunkFileNames: `assets/[name].[hash].js`,
+        assetFileNames: `assets/[name].[hash].[ext]`
+      }
+    }
   }
 })
