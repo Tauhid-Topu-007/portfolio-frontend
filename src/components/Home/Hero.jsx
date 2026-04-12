@@ -10,25 +10,24 @@ const Hero = () => {
 
   if (loading) return null;
 
-  // Get the API base URL for images
-  const API_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend-1-qj6w.onrender.com';
+  // Backend URL for production
+  const BACKEND_URL = 'https://portfolio-backend-1-qj6w.onrender.com';
   
-  // Construct full image URL if it's a relative path
+  // Get profile image
   let profileImage = 'https://via.placeholder.com/128';
   
   if (settings?.heroSection?.profileImage) {
-    // If it's already a full URL, use it
-    if (settings.heroSection.profileImage.startsWith('http')) {
-      profileImage = settings.heroSection.profileImage;
+    const savedUrl = settings.heroSection.profileImage;
+    // If it's already a full URL with http, use it
+    if (savedUrl.startsWith('http')) {
+      profileImage = savedUrl;
     } else {
-      // Otherwise, prepend the backend URL
-      profileImage = `${API_URL}${settings.heroSection.profileImage}`;
+      // Otherwise prepend the backend URL
+      profileImage = `${BACKEND_URL}${savedUrl}`;
     }
-  } else if (user?.avatar) {
-    profileImage = user.avatar;
   }
 
-  console.log('Profile image URL:', profileImage);
+  console.log('🖼️ Profile image URL:', profileImage);
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16">
@@ -46,9 +45,10 @@ const Hero = () => {
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover"
                 onError={(e) => {
-                  console.error('Image failed to load:', profileImage);
+                  console.error('❌ Image failed to load:', profileImage);
                   e.target.src = 'https://via.placeholder.com/128';
                 }}
+                onLoad={() => console.log('✅ Image loaded:', profileImage)}
               />
             </div>
           </motion.div>

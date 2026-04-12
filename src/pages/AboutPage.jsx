@@ -12,10 +12,15 @@ const AboutPage = () => {
   const { experiences, educations, certificates, loading } = useContext(DataContext);
   const { user } = useContext(AuthContext);
 
+  // SAFE: Ensure data is array
+  const safeExperiences = Array.isArray(experiences) ? experiences : [];
+  const safeEducations = Array.isArray(educations) ? educations : [];
+  const safeCertificates = Array.isArray(certificates) ? certificates : [];
+
   const sections = [
-    { id: 'education', title: 'Education', icon: FaGraduationCap, data: educations },
-    { id: 'experience', title: 'Experience', icon: FaBriefcase, data: experiences },
-    { id: 'certificates', title: 'Certificates', icon: FaCertificate, data: certificates },
+    { id: 'education', title: 'Education', icon: FaGraduationCap, data: safeEducations },
+    { id: 'experience', title: 'Experience', icon: FaBriefcase, data: safeExperiences },
+    { id: 'certificates', title: 'Certificates', icon: FaCertificate, data: safeCertificates },
   ];
 
   if (loading) {
@@ -73,23 +78,27 @@ const AboutPage = () => {
               {section.id === 'education' && <Timeline items={section.data} />}
               {section.id === 'experience' && (
                 <div className="grid grid-cols-1 gap-6">
-                  {section.data?.map((item, idx) => (
-                    <ExperienceCard key={item._id} experience={item} index={idx} />
+                  {section.data.map((item, idx) => (
+                    <ExperienceCard key={item?._id || idx} experience={item} index={idx} />
                   ))}
+                  {section.data.length === 0 && (
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                      No experience added yet.
+                    </p>
+                  )}
                 </div>
               )}
               {section.id === 'certificates' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {section.data?.map((cert, idx) => (
-                    <CertificateCard key={cert._id} certificate={cert} index={idx} />
+                  {section.data.map((cert, idx) => (
+                    <CertificateCard key={cert?._id || idx} certificate={cert} index={idx} />
                   ))}
+                  {section.data.length === 0 && (
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-8 col-span-3">
+                      No certificates added yet.
+                    </p>
+                  )}
                 </div>
-              )}
-
-              {(!section.data || section.data.length === 0) && (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  No {section.title.toLowerCase()} added yet.
-                </p>
               )}
             </div>
           </section>

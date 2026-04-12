@@ -9,11 +9,18 @@ const ResearchPage = () => {
   const { research, loading } = useContext(DataContext);
   const [search, setSearch] = useState('');
 
-  const filteredResearch = research?.filter(paper => {
-    return paper.title.toLowerCase().includes(search.toLowerCase()) ||
-           paper.abstract.toLowerCase().includes(search.toLowerCase()) ||
-           paper.authors?.some(author => author.toLowerCase().includes(search.toLowerCase())) ||
-           paper.keywords?.some(keyword => keyword.toLowerCase().includes(search.toLowerCase()));
+  // SAFE: Ensure research is an array
+  const safeResearch = Array.isArray(research) ? research : [];
+
+  const filteredResearch = safeResearch.filter(paper => {
+    if (!paper) return false;
+    if (!search) return true;
+    return (
+      (paper.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (paper.abstract || '').toLowerCase().includes(search.toLowerCase()) ||
+      (paper.authors || []).some(author => (author || '').toLowerCase().includes(search.toLowerCase())) ||
+      (paper.keywords || []).some(keyword => (keyword || '').toLowerCase().includes(search.toLowerCase()))
+    );
   });
 
   if (loading) {
@@ -66,7 +73,7 @@ const ResearchPage = () => {
             </div>
 
             {/* Research Papers */}
-            {filteredResearch?.length === 0 ? (
+            {filteredResearch.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">No research papers found.</p>
               </div>
@@ -74,34 +81,35 @@ const ResearchPage = () => {
               <div className="space-y-6">
                 {filteredResearch.map((paper, index) => (
                   <motion.div
-                    key={paper._id}
+                    key={paper?._id || index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg card-hover"
                   >
-                    <h2 className="text-2xl font-bold mb-2">{paper.title}</h2>
+                    <h2 className="text-2xl font-bold mb-2">{paper?.title || 'Untitled'}</h2>
                     
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
                       <span className="flex items-center gap-1">
-                        <FaUserFriends /> {paper.authors?.join(', ')}
+                        <FaUserFriends /> {(paper?.authors || []).slice(0, 3).join(', ')}
+                        {(paper?.authors || []).length > 3 && ` +${paper.authors.length - 3}`}
                       </span>
                       <span className="flex items-center gap-1">
-                        <FaCalendar /> {moment(paper.publicationDate).format('YYYY')}
+                        <FaCalendar /> {paper?.publicationDate ? moment(paper.publicationDate).format('YYYY') : 'N/A'}
                       </span>
                     </div>
                     
                     <p className="text-gray-600 dark:text-gray-400 mb-3">
-                      <strong>Published in:</strong> {paper.publicationVenue}
+                      <strong>Published in:</strong> {paper?.publicationVenue || 'N/A'}
                     </p>
                     
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      {paper.abstract}
+                      {paper?.abstract || 'No abstract available.'}
                     </p>
                     
-                    {paper.keywords && paper.keywords.length > 0 && (
+                    {(paper?.keywords || []).length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {paper.keywords.map((keyword, i) => (
+                        {(paper?.keywords || []).map((keyword, i) => (
                           <span key={i} className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs rounded">
                             {keyword}
                           </span>
@@ -110,7 +118,7 @@ const ResearchPage = () => {
                     )}
                     
                     <div className="flex flex-wrap gap-3">
-                      {paper.doi && (
+                      {paper?.doi && (
                         <a
                           href={`https://doi.org/${paper.doi}`}
                           target="_blank"
@@ -120,7 +128,7 @@ const ResearchPage = () => {
                           DOI: {paper.doi} <FaExternalLinkAlt size={12} />
                         </a>
                       )}
-                      {paper.pdfUrl && (
+                      {paper?.pdfUrl && (
                         <a
                           href={paper.pdfUrl}
                           target="_blank"
@@ -131,12 +139,6 @@ const ResearchPage = () => {
                         </a>
                       )}
                     </div>
-                    
-                    {paper.citations > 0 && (
-                      <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                        Cited by: {paper.citations} papers
-                      </div>
-                    )}
                   </motion.div>
                 ))}
               </div>

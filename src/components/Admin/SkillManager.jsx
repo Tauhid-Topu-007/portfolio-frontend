@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api'; // Use api instead of axios
 import toast from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus, FaTimes } from 'react-icons/fa';
 
@@ -23,8 +23,8 @@ const SkillManager = () => {
 
   const fetchSkills = async () => {
     try {
-      const { data } = await axios.get('/api/skills');
-      setSkills(data);
+      const { data } = await api.get('/skills');
+      setSkills(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching skills:', error);
       toast.error('Failed to fetch skills');
@@ -35,12 +35,24 @@ const SkillManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const proficiency = parseInt(formData.proficiency) || 0;
+    const yearsOfExperience = parseInt(formData.yearsOfExperience) || 0;
+    const order = parseInt(formData.order) || 0;
+    
+    const dataToSend = {
+      ...formData,
+      proficiency: Math.min(100, Math.max(0, proficiency)),
+      yearsOfExperience: Math.max(0, yearsOfExperience),
+      order: Math.max(0, order),
+    };
+    
     try {
       if (editingSkill) {
-        await axios.put(`/api/skills/${editingSkill._id}`, formData);
+        await api.put(`/skills/${editingSkill._id}`, dataToSend);
         toast.success('Skill updated successfully');
       } else {
-        await axios.post('/api/skills', formData);
+        await api.post('/skills', dataToSend);
         toast.success('Skill created successfully');
       }
       fetchSkills();
@@ -55,7 +67,7 @@ const SkillManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this skill?')) {
       try {
-        await axios.delete(`/api/skills/${id}`);
+        await api.delete(`/skills/${id}`);
         toast.success('Skill deleted successfully');
         fetchSkills();
       } catch (error) {
@@ -80,14 +92,19 @@ const SkillManager = () => {
   const editSkill = (skill) => {
     setEditingSkill(skill);
     setFormData({
-      name: skill.name,
-      category: skill.category,
-      proficiency: skill.proficiency,
-      yearsOfExperience: skill.yearsOfExperience,
-      order: skill.order,
-      isActive: skill.isActive,
+      name: skill.name || '',
+      category: skill.category || 'frontend',
+      proficiency: skill.proficiency || 50,
+      yearsOfExperience: skill.yearsOfExperience || 0,
+      order: skill.order || 0,
+      isActive: skill.isActive !== undefined ? skill.isActive : true,
     });
     setShowModal(true);
+  };
+
+  const handleNumberChange = (field, value) => {
+    const numValue = parseInt(value);
+    setFormData({ ...formData, [field]: isNaN(numValue) ? 0 : numValue });
   };
 
   if (loading) {
@@ -142,12 +159,12 @@ const SkillManager = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${skill.proficiency}%` }} />
+                      <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${skill.proficiency || 0}%` }} />
                     </div>
-                    <span>{skill.proficiency}%</span>
+                    <span>{skill.proficiency || 0}%</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">{skill.yearsOfExperience} years</td>
+                <td className="px-6 py-4 whitespace-nowrap">{skill.yearsOfExperience || 0} years</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${skill.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {skill.isActive ? 'Active' : 'Inactive'}
@@ -213,7 +230,7 @@ const SkillManager = () => {
                   max="100"
                   required
                   value={formData.proficiency}
-                  onChange={(e) => setFormData({ ...formData, proficiency: parseInt(e.target.value) })}
+                  onChange={(e) => handleNumberChange('proficiency', e.target.value)}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
                 />
               </div>
@@ -225,7 +242,7 @@ const SkillManager = () => {
                   min="0"
                   step="0.5"
                   value={formData.yearsOfExperience}
-                  onChange={(e) => setFormData({ ...formData, yearsOfExperience: parseFloat(e.target.value) })}
+                  onChange={(e) => handleNumberChange('yearsOfExperience', e.target.value)}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
                 />
               </div>
@@ -234,8 +251,9 @@ const SkillManager = () => {
                 <label className="block text-sm font-medium mb-2">Order</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                  onChange={(e) => handleNumberChange('order', e.target.value)}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
                 />
               </div>
