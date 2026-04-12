@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Get the API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = 'https://portfolio-backend-1-qj6w.onrender.com';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
