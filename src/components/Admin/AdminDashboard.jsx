@@ -21,6 +21,15 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
 
+  // SAFE: Ensure all data is array
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  const safeBlogs = Array.isArray(blogs) ? blogs : [];
+  const safeResearch = Array.isArray(research) ? research : [];
+  const safeSkills = Array.isArray(skills) ? skills : [];
+  const safeCertificates = Array.isArray(certificates) ? certificates : [];
+  const safeExperiences = Array.isArray(experiences) ? experiences : [];
+  const safeEducations = Array.isArray(educations) ? educations : [];
+
   useEffect(() => {
     fetchMessages();
     fetchStats();
@@ -28,19 +37,8 @@ const AdminDashboard = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await axios.get('/api/messages');
-      const data = response.data;
-      if (data && typeof data === 'object') {
-        if (Array.isArray(data)) {
-          setMessages(data);
-        } else if (data.data && Array.isArray(data.data)) {
-          setMessages(data.data);
-        } else {
-          setMessages([]);
-        }
-      } else {
-        setMessages([]);
-      }
+      const { data } = await axios.get('/api/messages');
+      setMessages(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching messages:', error);
       setMessages([]);
@@ -49,66 +47,39 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('/api/blogs');
-      const data = response.data;
-      let blogArray = [];
+      const { data } = await axios.get('/api/blogs');
+      const blogData = Array.isArray(data) ? data : [];
       
-      if (Array.isArray(data)) {
-        blogArray = data;
-      } else if (data && data.data && Array.isArray(data.data)) {
-        blogArray = data.data;
+      let totalViews = 0;
+      let totalLikes = 0;
+      for (let i = 0; i < blogData.length; i++) {
+        totalViews += blogData[i]?.views || 0;
+        totalLikes += blogData[i]?.likes || 0;
       }
-      
-      let views = 0;
-      let likes = 0;
-      for (let i = 0; i < blogArray.length; i++) {
-        const item = blogArray[i];
-        if (item) {
-          views += item.views || 0;
-          likes += item.likes || 0;
-        }
-      }
-      setStats({ totalViews: views, totalLikes: likes });
+      setStats({ totalViews, totalLikes });
     } catch (error) {
       console.error('Error fetching stats:', error);
       setStats({ totalViews: 0, totalLikes: 0 });
     }
   };
 
-  // Safe count functions
-  const getCount = (data) => {
-    if (!data) return 0;
-    if (Array.isArray(data)) return data.length;
-    if (data.data && Array.isArray(data.data)) return data.data.length;
-    return 0;
-  };
+  const projectsCount = safeProjects.length;
+  const blogsCount = safeBlogs.length;
+  const researchCount = safeResearch.length;
+  const skillsCount = safeSkills.length;
+  const certificatesCount = safeCertificates.length;
+  const experiencesCount = safeExperiences.length;
+  const educationsCount = safeEducations.length;
+  const messagesCount = messages.length;
 
-  const projectsCount = getCount(projects);
-  const blogsCount = getCount(blogs);
-  const researchCount = getCount(research);
-  const skillsCount = getCount(skills);
-  const certificatesCount = getCount(certificates);
-  const experiencesCount = getCount(experiences);
-  const educationsCount = getCount(educations);
-  const messagesCount = getCount(messages);
-
-  // Safe unread messages count
   let unreadMessages = 0;
-  if (messages && Array.isArray(messages)) {
-    for (let i = 0; i < messages.length; i++) {
-      if (messages[i] && messages[i].isRead === false) {
-        unreadMessages++;
-      }
-    }
+  for (let i = 0; i < messages.length; i++) {
+    if (messages[i]?.isRead === false) unreadMessages++;
   }
 
-  // Safe unpublished blogs count
   let unpublishedBlogs = 0;
-  const blogsArray = Array.isArray(blogs) ? blogs : (blogs?.data || []);
-  for (let i = 0; i < blogsArray.length; i++) {
-    if (blogsArray[i] && blogsArray[i].isPublished === false) {
-      unpublishedBlogs++;
-    }
+  for (let i = 0; i < safeBlogs.length; i++) {
+    if (safeBlogs[i]?.isPublished === false) unpublishedBlogs++;
   }
 
   const statCards = [
@@ -126,78 +97,45 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
-        <div style={{ 
-          width: '48px', 
-          height: '48px', 
-          border: '4px solid #e2e8f0', 
-          borderTop: '4px solid #6366f1', 
-          borderRadius: '50%', 
-          animation: 'spin 1s linear infinite' 
-        }} />
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: '24px' }}>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>Dashboard</h1>
-          <p style={{ color: '#666', marginTop: '4px' }}>Welcome back, {user?.name || 'Admin'}!</p>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back, {user?.name || 'Admin'}!</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="flex gap-2 flex-wrap">
           {unreadMessages > 0 && (
-            <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '4px 12px', borderRadius: '9999px', fontSize: '14px' }}>
+            <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
               {unreadMessages} Unread Messages
             </div>
           )}
           {unpublishedBlogs > 0 && (
-            <div style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: '9999px', fontSize: '14px' }}>
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm">
               {unpublishedBlogs} Draft Blogs
             </div>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <a 
-              key={stat.title}
-              href={stat.link}
-              style={{ 
-                backgroundColor: '#fff', 
-                borderRadius: '12px', 
-                padding: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                textDecoration: 'none',
-                display: 'block',
-                transition: 'transform 0.2s, box-shadow 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <a key={stat.title} href={stat.link} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>{stat.title}</p>
-                  <p style={{ fontSize: '32px', fontWeight: 'bold', margin: '8px 0 0 0' }}>{stat.value}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.title}</p>
+                  <p className="text-3xl font-bold mt-1">{stat.value}</p>
                 </div>
-                <div style={{ backgroundColor: stat.color, width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon style={{ color: '#fff', fontSize: '24px' }} />
+                <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center`}>
+                  <Icon className="text-white text-xl" />
                 </div>
               </div>
             </a>
@@ -205,32 +143,28 @@ const AdminDashboard = () => {
         })}
       </div>
 
-      <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Recent Messages</h2>
-          <a href="/admin/messages" style={{ color: '#6366f1', textDecoration: 'none', fontSize: '14px' }}>View All →</a>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Recent Messages</h2>
+          <a href="/admin/messages" className="text-primary-500 hover:text-primary-600 text-sm">View All →</a>
         </div>
-        {messagesCount > 0 ? (
+        {messages.length > 0 ? (
           messages.slice(0, 5).map((message) => (
-            <div key={message._id} style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                  <strong>{message.name}</strong>
-                  {!message.isRead && (
-                    <span style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px' }}>New</span>
-                  )}
-                  {message.isReplied && (
-                    <span style={{ backgroundColor: '#dcfce7', color: '#16a34a', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px' }}>Replied</span>
-                  )}
+            <div key={message._id} className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold">{message.name}</h3>
+                  {!message.isRead && <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">New</span>}
+                  {message.isReplied && <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">Replied</span>}
                 </div>
-                <p style={{ margin: '4px 0', color: '#666', fontSize: '14px' }}>{message.subject}</p>
-                <p style={{ margin: '4px 0', color: '#999', fontSize: '12px' }}>{new Date(message.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-600">{message.subject}</p>
+                <p className="text-xs text-gray-500 mt-1">{new Date(message.createdAt).toLocaleDateString()}</p>
               </div>
-              <a href="/admin/messages" style={{ color: '#6366f1', textDecoration: 'none', fontSize: '14px' }}>View →</a>
+              <a href="/admin/messages" className="text-primary-500 text-sm ml-4">View →</a>
             </div>
           ))
         ) : (
-          <p style={{ textAlign: 'center', color: '#666', padding: '32px' }}>No messages yet</p>
+          <p className="text-gray-500 text-center py-4">No messages yet</p>
         )}
       </div>
     </div>

@@ -4,7 +4,6 @@ import api from '../services/api';
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  // Always initialize as empty arrays
   const [projects, setProjects] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -44,7 +43,6 @@ export const DataProvider = ({ children }) => {
         api.get('/settings').catch(() => ({ data: null })),
       ]);
 
-      // Always set arrays, even if response is invalid
       setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
       setBlogs(Array.isArray(blogsRes.data) ? blogsRes.data : []);
       setSkills(Array.isArray(skillsRes.data) ? skillsRes.data : []);
