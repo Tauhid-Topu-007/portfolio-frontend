@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-// Use environment variable or fallback
-const API_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend-1-qj6w.onrender.com';
+// Make sure there's NO trailing slash
+const API_URL = 'https://portfolio-backend-1-qj6w.onrender.com';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: `${API_URL}/api`,  // This creates: https://...onrender.com/api
   headers: {
     'Content-Type': 'application/json',
   },
