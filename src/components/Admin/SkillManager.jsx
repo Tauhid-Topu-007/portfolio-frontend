@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api'; // Use api instead of axios
+import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { FaEdit, FaTrash, FaPlus, FaTimes } from 'react-icons/fa';
 
@@ -24,10 +24,12 @@ const SkillManager = () => {
   const fetchSkills = async () => {
     try {
       const { data } = await api.get('/skills');
+      // Ensure data is array
       setSkills(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching skills:', error);
       toast.error('Failed to fetch skills');
+      setSkills([]);
     } finally {
       setLoading(false);
     }
@@ -124,6 +126,9 @@ const SkillManager = () => {
     { value: 'soft', label: 'Soft Skills' },
   ];
 
+  // SAFE: Check if skills is array before mapping
+  const skillsList = Array.isArray(skills) ? skills : [];
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -139,58 +144,64 @@ const SkillManager = () => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Proficiency</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Experience</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {skills.map((skill) => (
-              <tr key={skill._id}>
-                <td className="px-6 py-4 whitespace-nowrap">{skill.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap capitalize">{skill.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${skill.proficiency || 0}%` }} />
-                    </div>
-                    <span>{skill.proficiency || 0}%</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{skill.yearsOfExperience || 0} years</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full ${skill.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {skill.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex gap-2">
-                    <button onClick={() => editSkill(skill)} className="text-blue-500 hover:text-blue-700">
-                      <FaEdit />
-                    </button>
-                    <button onClick={() => handleDelete(skill._id)} className="text-red-500 hover:text-red-700">
-                      <FaTrash />
-                    </button>
-                  </div>
-                </td>
+      {skillsList.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
+          <p className="text-gray-500">No skills yet. Click "Add Skill" to create one.</p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proficiency</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {skillsList.map((skill) => (
+                <tr key={skill._id} className="border-b border-gray-200 dark:border-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap">{skill.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap capitalize">{skill.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${skill.proficiency || 0}%` }} />
+                      </div>
+                      <span>{skill.proficiency || 0}%</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{skill.yearsOfExperience || 0} years</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${skill.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {skill.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2">
+                      <button onClick={() => editSkill(skill)} className="text-blue-500 hover:text-blue-700">
+                        <FaEdit />
+                      </button>
+                      <button onClick={() => handleDelete(skill._id)} className="text-red-500 hover:text-red-700">
+                        <FaTrash />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-2xl font-bold">{editingSkill ? 'Edit Skill' : 'Add Skill'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
                 <FaTimes size={24} />
@@ -205,7 +216,7 @@ const SkillManager = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -214,7 +225,7 @@ const SkillManager = () => {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 >
                   {categories.map(cat => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -231,7 +242,7 @@ const SkillManager = () => {
                   required
                   value={formData.proficiency}
                   onChange={(e) => handleNumberChange('proficiency', e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -243,7 +254,7 @@ const SkillManager = () => {
                   step="0.5"
                   value={formData.yearsOfExperience}
                   onChange={(e) => handleNumberChange('yearsOfExperience', e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               
@@ -254,7 +265,7 @@ const SkillManager = () => {
                   min="0"
                   value={formData.order}
                   onChange={(e) => handleNumberChange('order', e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="w-full px-4 py-2 rounded-lg border"
                 />
               </div>
               

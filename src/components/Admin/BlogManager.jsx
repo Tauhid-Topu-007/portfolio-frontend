@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { FaEdit, FaTrash, FaPlus, FaTimes, FaEye } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaEye, FaTimes } from 'react-icons/fa';
 import moment from 'moment';
 
 const BlogManager = () => {
@@ -44,7 +44,7 @@ const BlogManager = () => {
     formDataToSend.append('slug', formData.slug.toLowerCase().replace(/ /g, '-'));
     formDataToSend.append('excerpt', formData.excerpt);
     formDataToSend.append('content', formData.content);
-    formDataToSend.append('tags', JSON.stringify(formData.tags.split(',').map(t => t.trim())));
+    formDataToSend.append('tags', JSON.stringify(formData.tags.split(',').map(t => t.trim()).filter(t => t)));
     formDataToSend.append('category', formData.category);
     formDataToSend.append('isPublished', formData.isPublished);
     

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { FaTrash, FaReply, FaEye, FaTimes, FaCheck } from 'react-icons/fa';
+import { FaTrash, FaReply, FaEye, FaTimes } from 'react-icons/fa';
 import moment from 'moment';
 
 const MessageManager = () => {
@@ -81,9 +81,7 @@ const MessageManager = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Messages</h1>
-        <div className="text-sm text-gray-500">
-          Total: {messages.length} messages
-        </div>
+        <div className="text-sm text-gray-500">Total: {messages.length} messages</div>
       </div>
 
       {messages.length === 0 ? (

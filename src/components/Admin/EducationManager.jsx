@@ -154,7 +154,7 @@ const EducationManager = () => {
             <tbody>
               {educations.map((edu) => (
                 <tr key={edu._id} className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="px-6 py-4">{edu.institution}</td>
+                  <td className="px-6 py-4 font-medium">{edu.institution}</td>
                   <td className="px-6 py-4">{edu.degree} in {edu.field}</td>
                   <td className="px-6 py-4">
                     {moment(edu.startDate).format('YYYY')} - {edu.isCurrent ? 'Present' : moment(edu.endDate).format('YYYY')}
@@ -289,6 +289,27 @@ const EducationManager = () => {
                   onChange={(e) => setFormData({ ...formData, achievements: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Order</label>
+                <input
+                  type="number"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-2 rounded-lg border"
+                />
+              </div>
+              
+              <div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  />
+                  <span>Active</span>
+                </label>
               </div>
               
               <div className="flex justify-end gap-3 pt-4">
