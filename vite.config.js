@@ -7,17 +7,13 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://portfolio-backend-1-qj6w.onrender.com',
         changeOrigin: true,
-      },
-      '/uploads': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
-    },
+        secure: true,
+      }
+    }
   },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-  },
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify('https://portfolio-backend-1-qj6w.onrender.com')
+  }
 })
