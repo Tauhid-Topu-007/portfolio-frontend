@@ -92,14 +92,34 @@ const SettingsManager = () => {
 
     setUploadingProfile(true);
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please login again');
+        window.location.href = '/admin/login';
+        return;
+      }
+
       const response = await axios.post('/api/upload/profile', uploadFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
       });
-      handleHeroChange('profileImage', response.data.url);
-      toast.success('Profile image uploaded successfully');
+      
+      if (response.data.success) {
+        handleHeroChange('profileImage', response.data.url);
+        toast.success('Profile image uploaded successfully');
+      } else {
+        toast.error(response.data.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading profile image:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload image');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        window.location.href = '/admin/login';
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to upload image');
+      }
     } finally {
       setUploadingProfile(false);
     }
@@ -124,14 +144,34 @@ const SettingsManager = () => {
 
     setUploadingBackground(true);
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please login again');
+        window.location.href = '/admin/login';
+        return;
+      }
+
       const response = await axios.post('/api/upload/background', uploadFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
       });
-      handleHeroChange('backgroundImage', response.data.url);
-      toast.success('Background image uploaded successfully');
+      
+      if (response.data.success) {
+        handleHeroChange('backgroundImage', response.data.url);
+        toast.success('Background image uploaded successfully');
+      } else {
+        toast.error(response.data.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading background image:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload image');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        window.location.href = '/admin/login';
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to upload image');
+      }
     } finally {
       setUploadingBackground(false);
     }
@@ -144,7 +184,10 @@ const SettingsManager = () => {
     if (imageUrl) {
       const filename = imageUrl.split('/').pop();
       try {
-        await axios.delete(`/api/upload/profile/${filename}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`/api/upload/profile/${filename}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         handleHeroChange('profileImage', '');
         toast.success('Profile image removed successfully');
       } catch (error) {
@@ -164,7 +207,10 @@ const SettingsManager = () => {
     if (imageUrl) {
       const filename = imageUrl.split('/').pop();
       try {
-        await axios.delete(`/api/upload/background/${filename}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`/api/upload/background/${filename}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         handleHeroChange('backgroundImage', '');
         toast.success('Background image removed successfully');
       } catch (error) {
@@ -181,7 +227,6 @@ const SettingsManager = () => {
     e.preventDefault();
     setLoading(true);
     
-    // Process siteKeywords properly
     let keywordsArray = [];
     if (formData.siteKeywords) {
       if (typeof formData.siteKeywords === 'string') {
@@ -205,12 +250,20 @@ const SettingsManager = () => {
     };
     
     try {
-      await axios.put('/api/settings', dataToSend);
+      const token = localStorage.getItem('token');
+      await axios.put('/api/settings', dataToSend, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       toast.success('Settings updated successfully');
       refetch();
     } catch (error) {
       console.error('Error updating settings:', error);
-      toast.error(error.response?.data?.message || 'Failed to update settings');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        window.location.href = '/admin/login';
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to update settings');
+      }
     } finally {
       setLoading(false);
     }
@@ -276,7 +329,6 @@ const SettingsManager = () => {
             <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
               <label className="block text-lg font-semibold mb-3">Profile Picture</label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                {/* Image Preview */}
                 <div className="relative">
                   {formData.heroSection.profileImage ? (
                     <div className="relative group">
@@ -302,7 +354,6 @@ const SettingsManager = () => {
                   )}
                 </div>
                 
-                {/* Upload Button */}
                 <div className="flex-1">
                   <label className={`cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors ${uploadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <FaUpload size={16} />

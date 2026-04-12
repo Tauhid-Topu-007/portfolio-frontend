@@ -1,8 +1,8 @@
-import React, { useContext } from "react";
-import { motion } from "framer-motion";
-import { Typewriter } from "react-simple-typewriter";
-import { DataContext } from "../../context/DataContext";
-import { AuthContext } from "../../context/AuthContext";
+import React, { useContext } from 'react';
+import { motion } from 'framer-motion';
+import { Typewriter } from 'react-simple-typewriter';
+import { DataContext } from '../../context/DataContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const Hero = () => {
   const { settings, loading } = useContext(DataContext);
@@ -10,30 +10,29 @@ const Hero = () => {
 
   if (loading) return null;
 
-  // Get profile image from settings (uploaded via admin panel)
-  const profileImage =
-    settings?.heroSection?.profileImage ||
-    user?.avatar ||
-    "https://via.placeholder.com/128";
-  const backgroundImage = settings?.heroSection?.backgroundImage;
+  // Get the API base URL for images
+  const API_URL = import.meta.env.VITE_API_URL || 'https://portfolio-backend-1-qj6w.onrender.com';
+  
+  // Construct full image URL if it's a relative path
+  let profileImage = 'https://via.placeholder.com/128';
+  
+  if (settings?.heroSection?.profileImage) {
+    // If it's already a full URL, use it
+    if (settings.heroSection.profileImage.startsWith('http')) {
+      profileImage = settings.heroSection.profileImage;
+    } else {
+      // Otherwise, prepend the backend URL
+      profileImage = `${API_URL}${settings.heroSection.profileImage}`;
+    }
+  } else if (user?.avatar) {
+    profileImage = user.avatar;
+  }
+
+  console.log('Profile image URL:', profileImage);
 
   return (
-    <section
-      className="min-h-screen flex items-center justify-center pt-16 relative"
-      style={
-        backgroundImage
-          ? {
-              backgroundImage: `url(${backgroundImage})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundAttachment: "fixed",
-            }
-          : {}
-      }
-    >
-      {backgroundImage && <div className="absolute inset-0 bg-black/50" />}
-
-      <div className="container mx-auto px-4 py-20 relative z-10">
+    <section className="min-h-screen flex items-center justify-center pt-16">
+      <div className="container mx-auto px-4 py-20">
         <div className="text-center">
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -46,6 +45,10 @@ const Hero = () => {
                 src={profileImage}
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  console.error('Image failed to load:', profileImage);
+                  e.target.src = 'https://via.placeholder.com/128';
+                }}
               />
             </div>
           </motion.div>
@@ -56,9 +59,8 @@ const Hero = () => {
             transition={{ delay: 0.2 }}
             className="text-5xl md:text-7xl font-bold mb-4"
           >
-            Hi, I'm{" "}
-            <br />
-            <span className="gradient-text">Tauhidul Islam Topu</span>
+            Hi, I'm{' '}
+            <span className="gradient-text">{user?.name || settings?.siteName || 'Developer'}</span>
           </motion.h1>
 
           <motion.div
@@ -69,21 +71,17 @@ const Hero = () => {
           >
             <Typewriter
               words={[
-                user?.title ||
-                  settings?.heroSection?.title ||
-                  "Full Stack Developer",
-    "AI Engineer",
-    "Machine Learning Enthusiast",
-    "Research Paper Writer",
-    "Problem Solver",
-    "Tech Enthusiast",
-    "Creative Thinker",
-    "Open Source Contributor",
-    "Lifelong Learner",
+                user?.title || settings?.heroSection?.title || 'Full Stack Developer',
+                'AI Engineer',
+                'Machine Learning Enthusiast',
+                'Research Paper Writer',
+                'Problem Solver',
+                'Tech Enthusiast',
+                'Creative Thinker',
               ]}
               loop={true}
               cursor
-              cursorStyle="|"
+              cursorStyle='|'
               typeSpeed={70}
               deleteSpeed={50}
               delaySpeed={1000}
@@ -96,16 +94,14 @@ const Hero = () => {
             transition={{ delay: 0.4 }}
             className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8"
           >
-            {user?.bio ||
-              settings?.siteDescription ||
-              "Passionate developer creating amazing web experiences with modern technologies."}
+            {user?.bio || settings?.siteDescription || 'Passionate developer creating amazing web experiences with modern technologies.'}
           </motion.p>
 
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="flex justify-center space-x-4 flex-wrap gap-4"
+            className="flex justify-center space-x-4"
           >
             <a href="#projects" className="btn-primary">
               View Projects
@@ -113,16 +109,6 @@ const Hero = () => {
             <a href="#contact" className="btn-secondary">
               Contact Me
             </a>
-            {settings?.heroSection?.resumeUrl && (
-              <a
-                href={settings.heroSection.resumeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary"
-              >
-                Download Resume
-              </a>
-            )}
           </motion.div>
         </div>
       </div>
