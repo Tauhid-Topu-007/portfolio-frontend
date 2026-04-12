@@ -10,24 +10,12 @@ const Hero = () => {
 
   if (loading) return null;
 
-  // Backend URL for production
-  const BACKEND_URL = 'https://portfolio-backend-1-qj6w.onrender.com';
-  
-  // Get profile image
-  let profileImage = 'https://via.placeholder.com/128';
+  // Get profile image - use Cloudinary URL or fallback
+  let profileImage = 'https://res.cloudinary.com/dhjnfh1mi/image/upload/v1/portfolio/default-profile';
   
   if (settings?.heroSection?.profileImage) {
-    const savedUrl = settings.heroSection.profileImage;
-    // If it's already a full URL with http, use it
-    if (savedUrl.startsWith('http')) {
-      profileImage = savedUrl;
-    } else {
-      // Otherwise prepend the backend URL
-      profileImage = `${BACKEND_URL}${savedUrl}`;
-    }
+    profileImage = settings.heroSection.profileImage;
   }
-
-  console.log('🖼️ Profile image URL:', profileImage);
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16">
@@ -45,10 +33,8 @@ const Hero = () => {
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover"
                 onError={(e) => {
-                  console.error('❌ Image failed to load:', profileImage);
-                  e.target.src = 'https://via.placeholder.com/128';
+                  e.target.src = 'https://res.cloudinary.com/dhjnfh1mi/image/upload/v1/portfolio/default-profile';
                 }}
-                onLoad={() => console.log('✅ Image loaded:', profileImage)}
               />
             </div>
           </motion.div>
@@ -75,9 +61,6 @@ const Hero = () => {
                 'AI Engineer',
                 'Machine Learning Enthusiast',
                 'Research Paper Writer',
-                'Problem Solver',
-                'Tech Enthusiast',
-                'Creative Thinker',
               ]}
               loop={true}
               cursor
@@ -94,7 +77,7 @@ const Hero = () => {
             transition={{ delay: 0.4 }}
             className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8"
           >
-            {user?.bio || settings?.siteDescription || 'Passionate developer creating amazing web experiences with modern technologies.'}
+            {user?.bio || settings?.siteDescription || 'Passionate developer creating amazing web experiences.'}
           </motion.p>
 
           <motion.div
