@@ -22,21 +22,25 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
 
-  // Helper function to safely get data as array
-  const asArray = (data) => {
+  // Helper function to ensure data is an array
+  const ensureArray = (data) => {
+    if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') return Object.values(data);
+    // If it's an object with data property
+    if (data.data && Array.isArray(data.data)) return data.data;
+    // If it's an object, try to get values
+    if (typeof data === 'object') return Object.values(data);
     return [];
   };
 
   // Get safe arrays
-  const safeProjects = asArray(projects);
-  const safeBlogs = asArray(blogs);
-  const safeResearch = asArray(research);
-  const safeSkills = asArray(skills);
-  const safeCertificates = asArray(certificates);
-  const safeExperiences = asArray(experiences);
-  const safeEducations = asArray(educations);
+  const safeProjects = ensureArray(projects);
+  const safeBlogs = ensureArray(blogs);
+  const safeResearch = ensureArray(research);
+  const safeSkills = ensureArray(skills);
+  const safeCertificates = ensureArray(certificates);
+  const safeExperiences = ensureArray(experiences);
+  const safeEducations = ensureArray(educations);
 
   useEffect(() => {
     fetchMessages();
@@ -45,8 +49,15 @@ const AdminDashboard = () => {
 
   const fetchMessages = async () => {
     try {
-      const { data } = await axios.get('/api/messages');
-      setMessages(asArray(data));
+      const response = await axios.get('/api/messages');
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setMessages(data);
+      } else if (data && data.data && Array.isArray(data.data)) {
+        setMessages(data.data);
+      } else {
+        setMessages([]);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       setMessages([]);
@@ -55,43 +66,93 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const { data } = await axios.get('/api/blogs');
-      const blogData = asArray(data);
+      const response = await axios.get('/api/blogs');
+      let blogData = [];
+      
+      if (Array.isArray(response.data)) {
+        blogData = response.data;
+      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        blogData = response.data.data;
+      }
       
       let totalViews = 0;
       let totalLikes = 0;
       
+      // Simple for loop - no reduce
       for (let i = 0; i < blogData.length; i++) {
-        totalViews += blogData[i]?.views || 0;
-        totalLikes += blogData[i]?.likes || 0;
+        const blog = blogData[i];
+        if (blog) {
+          totalViews = totalViews + (blog.views || 0);
+          totalLikes = totalLikes + (blog.likes || 0);
+        }
       }
       
-      setStats({ totalViews, totalLikes });
+      setStats({ totalViews: totalViews, totalLikes: totalLikes });
     } catch (error) {
       console.error('Error fetching stats:', error);
       setStats({ totalViews: 0, totalLikes: 0 });
     }
   };
 
-  // Calculate counts safely
-  const projectsCount = safeProjects.length;
-  const blogsCount = safeBlogs.length;
-  const researchCount = safeResearch.length;
-  const skillsCount = safeSkills.length;
-  const certificatesCount = safeCertificates.length;
-  const experiencesCount = safeExperiences.length;
-  const educationsCount = safeEducations.length;
-  const messagesCount = messages.length;
-  
-  // Calculate filtered counts safely
-  let unreadMessages = 0;
-  for (let i = 0; i < messages.length; i++) {
-    if (messages[i]?.isRead === false) unreadMessages++;
+  // Calculate counts using simple loops
+  let projectsCount = 0;
+  if (safeProjects && typeof safeProjects === 'object') {
+    projectsCount = Array.isArray(safeProjects) ? safeProjects.length : Object.keys(safeProjects).length;
   }
   
+  let blogsCount = 0;
+  if (safeBlogs && typeof safeBlogs === 'object') {
+    blogsCount = Array.isArray(safeBlogs) ? safeBlogs.length : Object.keys(safeBlogs).length;
+  }
+  
+  let researchCount = 0;
+  if (safeResearch && typeof safeResearch === 'object') {
+    researchCount = Array.isArray(safeResearch) ? safeResearch.length : Object.keys(safeResearch).length;
+  }
+  
+  let skillsCount = 0;
+  if (safeSkills && typeof safeSkills === 'object') {
+    skillsCount = Array.isArray(safeSkills) ? safeSkills.length : Object.keys(safeSkills).length;
+  }
+  
+  let certificatesCount = 0;
+  if (safeCertificates && typeof safeCertificates === 'object') {
+    certificatesCount = Array.isArray(safeCertificates) ? safeCertificates.length : Object.keys(safeCertificates).length;
+  }
+  
+  let experiencesCount = 0;
+  if (safeExperiences && typeof safeExperiences === 'object') {
+    experiencesCount = Array.isArray(safeExperiences) ? safeExperiences.length : Object.keys(safeExperiences).length;
+  }
+  
+  let educationsCount = 0;
+  if (safeEducations && typeof safeEducations === 'object') {
+    educationsCount = Array.isArray(safeEducations) ? safeEducations.length : Object.keys(safeEducations).length;
+  }
+  
+  let messagesCount = 0;
+  if (messages && Array.isArray(messages)) {
+    messagesCount = messages.length;
+  }
+  
+  // Calculate unread messages using simple loop
+  let unreadMessages = 0;
+  if (messages && Array.isArray(messages)) {
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i] && messages[i].isRead === false) {
+        unreadMessages = unreadMessages + 1;
+      }
+    }
+  }
+  
+  // Calculate unpublished blogs using simple loop
   let unpublishedBlogs = 0;
-  for (let i = 0; i < safeBlogs.length; i++) {
-    if (safeBlogs[i]?.isPublished === false) unpublishedBlogs++;
+  if (safeBlogs && Array.isArray(safeBlogs)) {
+    for (let i = 0; i < safeBlogs.length; i++) {
+      if (safeBlogs[i] && safeBlogs[i].isPublished === false) {
+        unpublishedBlogs = unpublishedBlogs + 1;
+      }
+    }
   }
 
   const statCards = [
