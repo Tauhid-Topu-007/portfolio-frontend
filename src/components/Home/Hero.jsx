@@ -4,8 +4,11 @@ import { Typewriter } from 'react-simple-typewriter';
 import { DataContext } from '../../context/DataContext';
 import { getImageUrl } from '../../services/api';
 
-// ✅ Reliable default - no file dependency
-const DEFAULT_IMAGE = 'https://cultural-jade-qntfo0gxs0.edgeone.app/image.jpg';
+// ✅ YOUR DEFAULT IMAGE - Replace with your actual image URL
+const DEFAULT_IMAGE = '/frontend/public/images/Topu.jpg';
+
+// ✅ Fallback if your image fails
+const ULTIMATE_FALLBACK = 'https://ui-avatars.com/api/?name=Tauhidul+Islam+Topu&size=400&background=6366f1&color=fff&bold=true&format=png';
 
 const Hero = () => {
   const { settings, loading } = useContext(DataContext);
@@ -14,10 +17,26 @@ const Hero = () => {
 
   const displayName = settings?.heroSection?.title || settings?.siteName || 'Tauhidul Islam Topu';
   
-  // ✅ Use uploaded image, local image, or generated avatar
+  // ✅ Use uploaded image OR your default image
   const profileImage = settings?.heroSection?.profileImage 
     ? getImageUrl(settings.heroSection.profileImage) 
-    : '/images/Topu.jpg';
+    : DEFAULT_IMAGE;
+
+  const handleImageError = (e) => {
+    // If your default image fails, use the ultimate fallback
+    if (e.target.src === DEFAULT_IMAGE || e.target.src.includes('edgeone')) {
+      e.target.src = ULTIMATE_FALLBACK;
+    } else {
+      // All failed - show initials
+      e.target.onerror = null;
+      e.target.style.display = 'none';
+      const parent = e.target.parentElement;
+      const div = document.createElement('div');
+      div.className = 'w-full h-full rounded-full flex items-center justify-center text-white text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600';
+      div.textContent = displayName.charAt(0).toUpperCase();
+      parent.appendChild(div);
+    }
+  };
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16 bg-white dark:bg-gray-900">
@@ -34,16 +53,11 @@ const Hero = () => {
                 src={profileImage}
                 alt={displayName}
                 className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
-                onError={(e) => {
-                  // ✅ Ultimate fallback - generated avatar always works
-                  e.target.onerror = null;
-                  e.target.src = DEFAULT_IMAGE;
-                }}
+                onError={handleImageError}
               />
             </div>
           </motion.div>
 
-          {/* Rest of component unchanged... */}
           <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
