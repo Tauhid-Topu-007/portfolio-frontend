@@ -11,10 +11,10 @@ const Hero = () => {
 
   const displayName = settings?.heroSection?.title || settings?.siteName || 'Tauhidul Islam Topu';
   
-  // ✅ FIXED: Get profile image from backend settings, NOT Cloudinary
+  // ✅ Get profile image - use uploaded image OR default from public folder
   const profileImage = settings?.heroSection?.profileImage 
     ? getImageUrl(settings.heroSection.profileImage) 
-    : null;
+    : '/images/Topu.jpg';
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16 bg-white dark:bg-gray-900">
@@ -27,26 +27,15 @@ const Hero = () => {
             className="mb-8"
           >
             <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-600 p-1 shadow-xl">
-              {profileImage ? (
-                <img
-                  src={profileImage}
-                  alt="Profile"
-                  className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                    const parent = e.target.parentElement;
-                    const div = document.createElement('div');
-                    div.className = 'w-full h-full rounded-full flex items-center justify-center text-white text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600';
-                    div.textContent = displayName.charAt(0).toUpperCase();
-                    parent.appendChild(div);
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full rounded-full flex items-center justify-center text-white text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/images/Topu.jpg';
+                }}
+              />
             </div>
           </motion.div>
 
