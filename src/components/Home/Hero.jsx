@@ -4,6 +4,9 @@ import { Typewriter } from 'react-simple-typewriter';
 import { DataContext } from '../../context/DataContext';
 import { getImageUrl } from '../../services/api';
 
+// ✅ Import the image so Vite processes it for production
+import defaultProfileImg from '/images/Topu.jpg';
+
 const Hero = () => {
   const { settings, loading } = useContext(DataContext);
 
@@ -11,10 +14,10 @@ const Hero = () => {
 
   const displayName = settings?.heroSection?.title || settings?.siteName || 'Tauhidul Islam Topu';
   
-  // ✅ Get profile image - use uploaded image OR default from public folder
+  // ✅ Get profile image - use uploaded image OR local default
   const profileImage = settings?.heroSection?.profileImage 
     ? getImageUrl(settings.heroSection.profileImage) 
-    : '/images/Topu.jpg';
+    : defaultProfileImg;
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16 bg-white dark:bg-gray-900">
@@ -33,7 +36,7 @@ const Hero = () => {
                 className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = '/images/Topu.jpg';
+                  e.target.src = defaultProfileImg;
                 }}
               />
             </div>

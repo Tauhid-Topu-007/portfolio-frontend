@@ -3,9 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaTachometerAlt, FaProjectDiagram, FaBlog, FaFlask, 
   FaCode, FaBriefcase, FaGraduationCap, FaCertificate, 
-  FaEnvelope, FaCog, FaBars, FaTimes, FaSignOutAlt, FaUser
+  FaEnvelope, FaCog, FaBars, FaTimes, FaSignOutAlt 
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
+
+// ✅ Default avatar from public folder
+import defaultAvatar from '/images/Topu.jpg';
 
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -37,12 +40,6 @@ const AdminLayout = ({ children }) => {
     return false;
   };
 
-  // Get user initials for avatar
-  const getInitials = (name) => {
-    if (!name) return 'A';
-    return name.charAt(0).toUpperCase();
-  };
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       {/* Mobile Sidebar Overlay */}
@@ -60,9 +57,14 @@ const AdminLayout = ({ children }) => {
         {/* Logo & User Info */}
         <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-3 mb-3">
-            {/* ✅ FIXED: No Cloudinary - Use gradient initials avatar */}
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
-              {getInitials(user?.name)}
+            {/* ✅ Avatar with default image */}
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-blue-500 shadow-md">
+              <img 
+                src={defaultAvatar} 
+                alt={user?.name || 'Admin'} 
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.src = defaultAvatar; }}
+              />
             </div>
             <div className="min-w-0">
               <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">
