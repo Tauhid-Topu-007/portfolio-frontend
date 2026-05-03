@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FaSave, FaUpload, FaTrash, FaUser, FaImage, FaPalette, FaEnvelope, FaLink, FaGlobe } from 'react-icons/fa';
+import { FaSave, FaUpload, FaTrash, FaUser, FaGlobe, FaEnvelope, FaLink, FaPalette, FaEye, FaHome } from 'react-icons/fa';
 import { DataContext } from '../../context/DataContext';
+import api, { getImageUrl } from '../../services/api';
 
 const SettingsManager = () => {
-  const { settings, refetch } = useContext(DataContext);
+  const navigate = useNavigate();
+  const { settings, refreshData } = useContext(DataContext);
+  const [loading, setLoading] = useState(false);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
+
   const [formData, setFormData] = useState({
-    siteName: '',
-    siteTitle: '',
-    siteDescription: '',
+    siteName: 'My Portfolio',
+    siteTitle: 'My Portfolio',
+    siteDescription: 'Welcome to my portfolio',
     siteKeywords: '',
     contactEmail: '',
     contactPhone: '',
@@ -23,8 +29,8 @@ const SettingsManager = () => {
       youtube: '',
     },
     heroSection: {
-      title: '',
-      subtitle: '',
+      title: 'Tauhidul Islam Topu',
+      subtitle: 'Full Stack Developer',
       profileImage: '',
       backgroundImage: '',
       resumeUrl: '',
@@ -35,17 +41,18 @@ const SettingsManager = () => {
       darkMode: false,
     },
   });
-  const [loading, setLoading] = useState(false);
-  const [uploadingProfile, setUploadingProfile] = useState(false);
-  const [uploadingBackground, setUploadingBackground] = useState(false);
 
+  // Load settings from context
   useEffect(() => {
     if (settings) {
+      console.log('📋 Loading settings:', settings);
       setFormData({
-        siteName: settings.siteName || '',
-        siteTitle: settings.siteTitle || '',
+        siteName: settings.siteName || 'My Portfolio',
+        siteTitle: settings.siteTitle || 'My Portfolio',
         siteDescription: settings.siteDescription || '',
-        siteKeywords: Array.isArray(settings.siteKeywords) ? settings.siteKeywords.join(', ') : '',
+        siteKeywords: Array.isArray(settings.siteKeywords) 
+          ? settings.siteKeywords.join(', ') 
+          : (settings.siteKeywords || ''),
         contactEmail: settings.contactEmail || '',
         contactPhone: settings.contactPhone || '',
         address: settings.address || '',
@@ -58,8 +65,8 @@ const SettingsManager = () => {
           youtube: settings.socialLinks?.youtube || '',
         },
         heroSection: {
-          title: settings.heroSection?.title || '',
-          subtitle: settings.heroSection?.subtitle || '',
+          title: settings.heroSection?.title || 'Tauhidul Islam Topu',
+          subtitle: settings.heroSection?.subtitle || 'Full Stack Developer',
           profileImage: settings.heroSection?.profileImage || '',
           backgroundImage: settings.heroSection?.backgroundImage || '',
           resumeUrl: settings.heroSection?.resumeUrl || '',
@@ -73,71 +80,56 @@ const SettingsManager = () => {
     }
   }, [settings]);
 
-  const handleProfileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+// Profile image upload handler
+const handleProfileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size should be less than 5MB');
-      return;
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error('File size must be less than 5MB');
+    return;
+  }
+
+  const uploadFormData = new FormData();
+  uploadFormData.append('profileImage', file);
+
+  setUploadingProfile(true);
+  try {
+    const token = localStorage.getItem('token');
+    
+    // ✅ Upload to backend (which uploads to Cloudinary)
+    const response = await fetch('https://portfolio-backend-1-qj6w.onrender.com/api/upload/profile', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: uploadFormData,
+    });
+
+    const data = await response.json();
+    console.log('📸 Upload response:', data);
+
+    if (data.success) {
+      // ✅ Use the Cloudinary URL directly
+      const imageUrl = data.fullUrl || data.url;
+      setFormData(prev => ({
+        ...prev,
+        heroSection: { ...prev.heroSection, profileImage: imageUrl }
+      }));
+      toast.success('✅ Image uploaded to Cloudinary! Click Save to apply.');
+    } else {
+      toast.error(data.message || 'Upload failed');
     }
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast.error('Failed to upload image');
+  } finally {
+    setUploadingProfile(false);
+  }
+};
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    const uploadFormData = new FormData();
-    uploadFormData.append('profileImage', file);
-
-    setUploadingProfile(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please login again');
-        window.location.href = '/admin/login';
-        return;
-      }
-
-      const response = await axios.post('/api/upload/profile', uploadFormData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.data.success) {
-        handleHeroChange('profileImage', response.data.url);
-        toast.success('Profile image uploaded successfully');
-      } else {
-        toast.error(response.data.message || 'Upload failed');
-      }
-    } catch (error) {
-      console.error('Error uploading profile image:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        window.location.href = '/admin/login';
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to upload image');
-      }
-    } finally {
-      setUploadingProfile(false);
-    }
-  };
-
+  // ✅ Handle Background Image Upload
   const handleBackgroundUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size should be less than 5MB');
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
 
     const uploadFormData = new FormData();
     uploadFormData.append('backgroundImage', file);
@@ -145,97 +137,59 @@ const SettingsManager = () => {
     setUploadingBackground(true);
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please login again');
-        window.location.href = '/admin/login';
-        return;
-      }
-
-      const response = await axios.post('/api/upload/background', uploadFormData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch('https://portfolio-backend-1-qj6w.onrender.com/api/upload/background', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: uploadFormData,
       });
-      
-      if (response.data.success) {
-        handleHeroChange('backgroundImage', response.data.url);
-        toast.success('Background image uploaded successfully');
+
+      const data = await response.json();
+
+      if (data.success) {
+        const imageUrl = data.fullUrl || data.url;
+        setFormData(prev => ({
+          ...prev,
+          heroSection: { ...prev.heroSection, backgroundImage: imageUrl }
+        }));
+        toast.success('✅ Background image uploaded! Click "Save All Settings" to apply.');
       } else {
-        toast.error(response.data.message || 'Upload failed');
+        toast.error(data.message || 'Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading background image:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        window.location.href = '/admin/login';
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to upload image');
-      }
+      toast.error('Failed to upload background image.');
     } finally {
       setUploadingBackground(false);
     }
   };
 
-  const handleRemoveProfileImage = async () => {
-    if (!window.confirm('Are you sure you want to remove your profile picture?')) return;
-    
-    const imageUrl = formData.heroSection.profileImage;
-    if (imageUrl) {
-      const filename = imageUrl.split('/').pop();
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/upload/profile/${filename}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        handleHeroChange('profileImage', '');
-        toast.success('Profile image removed successfully');
-      } catch (error) {
-        console.error('Error removing image:', error);
-        toast.error('Failed to remove image');
-      }
-    } else {
-      handleHeroChange('profileImage', '');
-      toast.success('Profile image removed');
-    }
+  // ✅ Remove Profile Image
+  const handleRemoveProfileImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      heroSection: { ...prev.heroSection, profileImage: '' }
+    }));
+    toast.success('Profile image removed. Click Save to apply.');
   };
 
-  const handleRemoveBackgroundImage = async () => {
-    if (!window.confirm('Are you sure you want to remove the background image?')) return;
-    
-    const imageUrl = formData.heroSection.backgroundImage;
-    if (imageUrl) {
-      const filename = imageUrl.split('/').pop();
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/upload/background/${filename}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        handleHeroChange('backgroundImage', '');
-        toast.success('Background image removed successfully');
-      } catch (error) {
-        console.error('Error removing image:', error);
-        toast.error('Failed to remove image');
-      }
-    } else {
-      handleHeroChange('backgroundImage', '');
-      toast.success('Background image removed');
-    }
+  // ✅ Remove Background Image
+  const handleRemoveBackgroundImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      heroSection: { ...prev.heroSection, backgroundImage: '' }
+    }));
+    toast.success('Background image removed. Click Save to apply.');
   };
 
+  // ✅ Save Settings & Redirect to Home
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    let keywordsArray = [];
-    if (formData.siteKeywords) {
-      if (typeof formData.siteKeywords === 'string') {
-        keywordsArray = formData.siteKeywords.split(',').map(k => k.trim()).filter(k => k);
-      } else if (Array.isArray(formData.siteKeywords)) {
-        keywordsArray = formData.siteKeywords;
-      }
-    }
-    
+
+    // Prepare data
+    const keywordsArray = formData.siteKeywords
+      ? formData.siteKeywords.split(',').map(k => k.trim()).filter(k => k)
+      : [];
+
     const dataToSend = {
       siteName: formData.siteName,
       siteTitle: formData.siteTitle,
@@ -245,119 +199,168 @@ const SettingsManager = () => {
       contactPhone: formData.contactPhone,
       address: formData.address,
       socialLinks: formData.socialLinks,
-      heroSection: formData.heroSection,
+      heroSection: {
+        title: formData.heroSection.title,
+        subtitle: formData.heroSection.subtitle,
+        profileImage: formData.heroSection.profileImage,
+        backgroundImage: formData.heroSection.backgroundImage,
+        resumeUrl: formData.heroSection.resumeUrl,
+      },
       theme: formData.theme,
     };
-    
+
+    console.log('📤 Saving settings:', dataToSend);
+
     try {
-      const token = localStorage.getItem('token');
-      await axios.put('/api/settings', dataToSend, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      toast.success('Settings updated successfully');
-      refetch();
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        window.location.href = '/admin/login';
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to update settings');
+      const response = await api.put('/settings', dataToSend);
+      console.log('✅ Settings saved:', response.data);
+
+      // Update context
+      if (typeof refreshData === 'function') {
+        await refreshData();
       }
+
+      toast.success('✅ Settings saved successfully! Redirecting to homepage...');
+
+      // ✅ Redirect to homepage after 1.5 seconds
+      setTimeout(() => {
+        navigate('/');
+        window.location.href = '/'; // Force full reload to show changes
+      }, 1500);
+
+    } catch (error) {
+      console.error('❌ Save error:', error);
+      toast.error(error.response?.data?.message || 'Failed to save settings. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Helper functions
   const handleSocialChange = (platform, value) => {
-    setFormData({
-      ...formData,
-      socialLinks: {
-        ...formData.socialLinks,
-        [platform]: value,
-      },
-    });
+    setFormData(prev => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [platform]: value }
+    }));
   };
 
   const handleHeroChange = (field, value) => {
-    setFormData({
-      ...formData,
-      heroSection: {
-        ...formData.heroSection,
-        [field]: value,
-      },
-    });
+    setFormData(prev => ({
+      ...prev,
+      heroSection: { ...prev.heroSection, [field]: value }
+    }));
   };
 
   const handleThemeChange = (field, value) => {
-    setFormData({
-      ...formData,
-      theme: {
-        ...formData.theme,
-        [field]: value,
-      },
-    });
+    setFormData(prev => ({
+      ...prev,
+      theme: { ...prev.theme, [field]: value }
+    }));
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold gradient-text">Site Settings</h1>
-        <button 
-          onClick={() => window.location.reload()}
-          className="text-gray-500 hover:text-primary-500 transition-colors"
-        >
-          Refresh
-        </button>
+    <div className="max-w-5xl mx-auto p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+            ⚙️ Site Settings
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            Customize your portfolio appearance and information
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { navigate('/'); window.location.href = '/'; }}
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm"
+          >
+            <FaHome size={14} /> View Site
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg disabled:opacity-50 transition-all flex items-center gap-2"
+          >
+            <FaSave size={14} /> {loading ? 'Saving...' : 'Save All Settings'}
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Profile & Hero Section */}
+        {/* ===== HERO SECTION ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaUser className="text-primary-500" />
-              Profile & Hero Section
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <FaUser className="text-blue-500" /> Hero Section
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Customize your profile picture and hero section content
-            </p>
+            <p className="text-xs text-gray-500 mt-1">This appears on your homepage</p>
           </div>
-          
-          <div className="p-6 space-y-6">
+
+          <div className="p-6 space-y-5">
+            {/* Hero Title & Subtitle */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Your Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.heroSection.title}
+                  onChange={(e) => handleHeroChange('title', e.target.value)}
+                  placeholder="Tauhidul Islam Topu"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Shows as "Hi, I'm [Your Name]"</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Hero Subtitle</label>
+                <input
+                  type="text"
+                  value={formData.heroSection.subtitle}
+                  onChange={(e) => handleHeroChange('subtitle', e.target.value)}
+                  placeholder="Full Stack Developer"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Appears in the typewriter animation</p>
+              </div>
+            </div>
+
             {/* Profile Image Upload */}
-            <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
-              <label className="block text-lg font-semibold mb-3">Profile Picture</label>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <div className="border-t pt-5">
+              <label className="block text-sm font-semibold mb-3">Profile Picture</label>
+              <div className="flex flex-wrap items-start gap-4">
+                {/* Preview */}
                 <div className="relative">
                   {formData.heroSection.profileImage ? (
                     <div className="relative group">
                       <img
                         src={formData.heroSection.profileImage}
                         alt="Profile"
-                        className="w-32 h-32 rounded-full object-cover border-4 border-primary-500 shadow-lg"
+                        className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                        onError={(e) => { e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23ddd" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23999" font-size="40">?</text></svg>'; }}
                       />
-                      <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={handleRemoveProfileImage}
-                          className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
-                        >
-                          <FaTrash size={16} />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveProfileImage}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        title="Remove image"
+                      >
+                        <FaTrash size={12} />
+                      </button>
                     </div>
                   ) : (
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-r from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
-                      <FaUser className="text-white text-5xl" />
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center border-4 border-blue-300">
+                      <FaUser className="text-white text-3xl md:text-5xl" />
                     </div>
                   )}
                 </div>
-                
-                <div className="flex-1">
-                  <label className={`cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors ${uploadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <FaUpload size={16} />
-                    <span>{uploadingProfile ? 'Uploading...' : formData.heroSection.profileImage ? 'Change Profile Picture' : 'Upload Profile Picture'}</span>
+
+                {/* Upload Button */}
+                <div className="flex-1 min-w-[200px]">
+                  <label className={`inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition-colors ${uploadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <FaUpload size={14} />
+                    <span className="text-sm">{uploadingProfile ? 'Uploading...' : formData.heroSection.profileImage ? 'Change Picture' : 'Upload Picture'}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -366,352 +369,152 @@ const SettingsManager = () => {
                       disabled={uploadingProfile}
                     />
                   </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Recommended: Square image, 128x128px or larger, max 5MB (JPG, PNG, GIF, WebP)
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    This picture will appear on your homepage hero section
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Square image recommended. Max 5MB (JPG, PNG, GIF, WebP)</p>
+                  {formData.heroSection.profileImage && (
+                    <p className="text-xs text-green-600 mt-1">✅ Image ready. Click "Save All Settings" to apply.</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Background Image Upload */}
-            <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
-              <label className="block text-lg font-semibold mb-3 flex items-center gap-2">
-                <FaImage className="text-primary-500" />
-                Background Image (Optional)
-              </label>
-              {formData.heroSection.backgroundImage && (
-                <div className="relative mb-3 group">
-                  <img
-                    src={formData.heroSection.backgroundImage}
-                    alt="Background"
-                    className="w-full h-40 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveBackgroundImage}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <FaTrash size={14} />
-                  </button>
-                </div>
-              )}
-              <label className={`cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors ${uploadingBackground ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <FaUpload size={16} />
-                <span>{uploadingBackground ? 'Uploading...' : formData.heroSection.backgroundImage ? 'Change Background' : 'Upload Background Image'}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleBackgroundUpload}
-                  className="hidden"
-                  disabled={uploadingBackground}
-                />
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Recommended: 1920x1080px landscape image, max 5MB
-              </p>
-            </div>
-            
-            {/* Hero Text Content */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Hero Title</label>
-                <input
-                  type="text"
-                  value={formData.heroSection.title}
-                  onChange={(e) => handleHeroChange('title', e.target.value)}
-                  placeholder="e.g., Full Stack Developer"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  This appears in the typewriter animation
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Hero Subtitle</label>
-                <input
-                  type="text"
-                  value={formData.heroSection.subtitle}
-                  onChange={(e) => handleHeroChange('subtitle', e.target.value)}
-                  placeholder="e.g., I create amazing web experiences"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Resume URL</label>
-                <input
-                  type="url"
-                  value={formData.heroSection.resumeUrl}
-                  onChange={(e) => handleHeroChange('resumeUrl', e.target.value)}
-                  placeholder="https://example.com/resume.pdf"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Link to your resume file (PDF, DOC, etc.)
-                </p>
-              </div>
+            {/* Resume URL */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">Resume URL</label>
+              <input
+                type="url"
+                value={formData.heroSection.resumeUrl}
+                onChange={(e) => handleHeroChange('resumeUrl', e.target.value)}
+                placeholder="https://example.com/your-resume.pdf"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
         </div>
 
-        {/* General Settings */}
+        {/* ===== GENERAL SETTINGS ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaGlobe className="text-primary-500" />
-              General Settings
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <FaGlobe className="text-blue-500" /> General Settings
             </h2>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Site Name</label>
-                <input
-                  type="text"
-                  value={formData.siteName}
-                  onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Site Title</label>
-                <input
-                  type="text"
-                  value={formData.siteTitle}
-                  onChange={(e) => setFormData({ ...formData, siteTitle: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Site Description</label>
-                <textarea
-                  rows={2}
-                  value={formData.siteDescription}
-                  onChange={(e) => setFormData({ ...formData, siteDescription: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Site Keywords (comma separated)</label>
-                <input
-                  type="text"
-                  value={formData.siteKeywords}
-                  onChange={(e) => setFormData({ ...formData, siteKeywords: e.target.value })}
-                  placeholder="react, javascript, portfolio, developer, web development"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Keywords help with SEO - separate with commas
-                </p>
-              </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Site Name</label>
+              <input type="text" value={formData.siteName}
+                onChange={(e) => setFormData(p => ({ ...p, siteName: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Site Title</label>
+              <input type="text" value={formData.siteTitle}
+                onChange={(e) => setFormData(p => ({ ...p, siteTitle: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold mb-2">Site Description</label>
+              <textarea rows={2} value={formData.siteDescription}
+                onChange={(e) => setFormData(p => ({ ...p, siteDescription: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold mb-2">Keywords (SEO)</label>
+              <input type="text" value={formData.siteKeywords}
+                onChange={(e) => setFormData(p => ({ ...p, siteKeywords: e.target.value }))}
+                placeholder="react, javascript, developer, portfolio"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
             </div>
           </div>
         </div>
 
-        {/* Contact Information */}
+        {/* ===== CONTACT INFO ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaEnvelope className="text-primary-500" />
-              Contact Information
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <FaEnvelope className="text-blue-500" /> Contact Information
             </h2>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Contact Email</label>
-                <input
-                  type="email"
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                  placeholder="your@email.com"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Contact Phone</label>
-                <input
-                  type="text"
-                  value={formData.contactPhone}
-                  onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                  placeholder="+1 234 567 8900"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Address</label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="New York, USA"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Email</label>
+              <input type="email" value={formData.contactEmail}
+                onChange={(e) => setFormData(p => ({ ...p, contactEmail: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Phone</label>
+              <input type="text" value={formData.contactPhone}
+                onChange={(e) => setFormData(p => ({ ...p, contactPhone: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold mb-2">Address</label>
+              <input type="text" value={formData.address}
+                onChange={(e) => setFormData(p => ({ ...p, address: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
             </div>
           </div>
         </div>
 
-        {/* Social Links */}
+        {/* ===== SOCIAL LINKS ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaLink className="text-primary-500" />
-              Social Media Links
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <FaLink className="text-blue-500" /> Social Media Links
             </h2>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">GitHub</label>
-                <input
-                  type="url"
-                  value={formData.socialLinks.github}
-                  onChange={(e) => handleSocialChange('github', e.target.value)}
-                  placeholder="https://github.com/username"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {['github', 'linkedin', 'twitter', 'instagram', 'facebook', 'youtube'].map(platform => (
+              <div key={platform}>
+                <label className="block text-sm font-semibold mb-2 capitalize">{platform}</label>
+                <input type="url" value={formData.socialLinks[platform]}
+                  onChange={(e) => handleSocialChange(platform, e.target.value)}
+                  placeholder={`https://${platform}.com/yourusername`}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">LinkedIn</label>
-                <input
-                  type="url"
-                  value={formData.socialLinks.linkedin}
-                  onChange={(e) => handleSocialChange('linkedin', e.target.value)}
-                  placeholder="https://linkedin.com/in/username"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Twitter</label>
-                <input
-                  type="url"
-                  value={formData.socialLinks.twitter}
-                  onChange={(e) => handleSocialChange('twitter', e.target.value)}
-                  placeholder="https://twitter.com/username"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Instagram</label>
-                <input
-                  type="url"
-                  value={formData.socialLinks.instagram}
-                  onChange={(e) => handleSocialChange('instagram', e.target.value)}
-                  placeholder="https://instagram.com/username"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Facebook</label>
-                <input
-                  type="url"
-                  value={formData.socialLinks.facebook}
-                  onChange={(e) => handleSocialChange('facebook', e.target.value)}
-                  placeholder="https://facebook.com/username"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">YouTube</label>
-                <input
-                  type="url"
-                  value={formData.socialLinks.youtube}
-                  onChange={(e) => handleSocialChange('youtube', e.target.value)}
-                  placeholder="https://youtube.com/c/username"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Theme Settings */}
+        {/* ===== THEME ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaPalette className="text-primary-500" />
-              Theme Settings
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <FaPalette className="text-blue-500" /> Theme Settings
             </h2>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Primary Color</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={formData.theme.primaryColor}
-                    onChange={(e) => handleThemeChange('primaryColor', e.target.value)}
-                    className="w-16 h-10 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={formData.theme.primaryColor}
-                    onChange={(e) => handleThemeChange('primaryColor', e.target.value)}
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Secondary Color</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={formData.theme.secondaryColor}
-                    onChange={(e) => handleThemeChange('secondaryColor', e.target.value)}
-                    className="w-16 h-10 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={formData.theme.secondaryColor}
-                    onChange={(e) => handleThemeChange('secondaryColor', e.target.value)}
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.theme.darkMode}
-                    onChange={(e) => handleThemeChange('darkMode', e.target.checked)}
-                    className="w-4 h-4 text-primary-500 rounded focus:ring-primary-500"
-                  />
-                  <span className="font-medium">Enable Dark Mode by Default</span>
-                </label>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                  Users can still toggle dark mode manually using the theme switcher in the navbar
-                </p>
-              </div>
+          <div className="p-6 space-y-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="text-sm font-semibold">Primary Color:</label>
+              <input type="color" value={formData.theme.primaryColor}
+                onChange={(e) => handleThemeChange('primaryColor', e.target.value)}
+                className="w-16 h-10 rounded border cursor-pointer" />
+              <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{formData.theme.primaryColor}</code>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={formData.theme.darkMode}
+                onChange={(e) => handleThemeChange('darkMode', e.target.checked)}
+                className="w-4 h-4 text-blue-500 rounded" />
+              <span className="font-semibold text-sm">Enable Dark Mode by Default</span>
+            </label>
           </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="sticky bottom-4 flex justify-end">
-          <button 
-            type="submit" 
-            disabled={loading || uploadingProfile || uploadingBackground} 
-            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        {/* ===== SAVE BUTTON ===== */}
+        <div className="sticky bottom-4 flex justify-center md:justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => { navigate('/'); window.location.href = '/'; }}
+            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
           >
-            <FaSave /> {loading ? 'Saving...' : uploadingProfile || uploadingBackground ? 'Uploading...' : 'Save All Settings'}
+            <FaEye size={14} /> View Site
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-xl disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg"
+          >
+            <FaSave size={14} /> {loading ? 'Saving...' : 'Save All Settings & Go to Homepage'}
           </button>
         </div>
       </form>

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DataContext } from '../../context/DataContext';
+import { getImageUrl } from '../../services/api';
 import { FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 
 const Projects = () => {
@@ -39,10 +40,15 @@ const Projects = () => {
               className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover"
             >
               <div className="relative h-48 overflow-hidden">
+                {/* ✅ FIXED: Use getImageUrl() to convert relative path to full URL */}
                 <img
-                  src={project.image || 'https://via.placeholder.com/400x300'}
+                  src={getImageUrl(project.image) || 'https://via.placeholder.com/400x300?text=No+Image'}
                   alt={project.title}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                  }}
                 />
               </div>
               <div className="p-6">
@@ -52,39 +58,23 @@ const Projects = () => {
                 </p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {project.technologies?.slice(0, 3).map((tech, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs rounded"
-                    >
+                    <span key={i} className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs rounded">
                       {tech}
                     </span>
                   ))}
                 </div>
                 <div className="flex justify-between items-center">
-                  <Link
-                    to={`/projects/${project._id}`}
-                    className="text-primary-500 hover:text-primary-600 font-semibold"
-                  >
+                  <Link to={`/projects/${project._id}`} className="text-primary-500 hover:text-primary-600 font-semibold">
                     Learn More →
                   </Link>
                   <div className="flex gap-3">
                     {project.githubUrl && (
-                      <a
-                        href={project.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-600 dark:text-gray-400 hover:text-primary-500"
-                      >
+                      <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-primary-500">
                         <FaGithub size={20} />
                       </a>
                     )}
                     {project.liveUrl && (
-                      <a
-                        href={project.liveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-600 dark:text-gray-400 hover:text-primary-500"
-                      >
+                      <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-primary-500">
                         <FaExternalLinkAlt size={18} />
                       </a>
                     )}

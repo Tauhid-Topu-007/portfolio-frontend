@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import toast from 'react-hot-toast';
 
 export const DataContext = createContext();
 
@@ -20,65 +19,96 @@ export const DataProvider = ({ children }) => {
   const [certificates, setCertificates] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      const endpoints = [
-        { key: 'projects', url: '/api/projects' },
-        { key: 'blogs', url: '/api/blogs' },
-        { key: 'skills', url: '/api/skills' },
-        { key: 'experiences', url: '/api/experiences' },
-        { key: 'educations', url: '/api/educations' },
-        { key: 'research', url: '/api/research' },
-        { key: 'certificates', url: '/api/certificates' },
-        { key: 'settings', url: '/api/settings' },
-      ];
+      setError(null);
+      console.log('📡 Fetching all data from API...');
 
-      const setters = {
-        projects: setProjects,
-        blogs: setBlogs,
-        skills: setSkills,
-        experiences: setExperiences,
-        educations: setEducations,
-        research: setResearch,
-        certificates: setCertificates,
-        settings: setSettings,
-      };
+      // Fetch settings FIRST (most important for display)
+      try {
+        const settingsRes = await api.get('/settings');
+        console.log('✅ Settings loaded:', settingsRes.data);
+        setSettings(settingsRes.data);
+      } catch (err) {
+        console.error('❌ Settings failed:', err.message);
+      }
 
-      const results = await Promise.allSettled(
-        endpoints.map(endpoint => api.get(endpoint.url))
-      );
+      // Fetch other data
+      try {
+        const projectsRes = await api.get('/projects');
+        setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
+        console.log('✅ Projects:', projectsRes.data?.length || 0);
+      } catch (err) { console.warn('⚠️ Projects failed:', err.message); setProjects([]); }
 
-      results.forEach((result, index) => {
-        const { key } = endpoints[index];
-        if (result.status === 'fulfilled') {
-          setters[key](result.value.data || []);
-        } else {
-          console.warn(`⚠️ Failed to fetch ${key}:`, result.reason?.message);
-          setters[key](key === 'settings' ? null : []);
-        }
-      });
+      try {
+        const blogsRes = await api.get('/blogs');
+        setBlogs(Array.isArray(blogsRes.data) ? blogsRes.data : []);
+        console.log('✅ Blogs:', blogsRes.data?.length || 0);
+      } catch (err) { console.warn('⚠️ Blogs failed:', err.message); setBlogs([]); }
 
-    } catch (error) {
-      console.error('❌ Error fetching data:', error);
+      try {
+        const skillsRes = await api.get('/skills');
+        setSkills(Array.isArray(skillsRes.data) ? skillsRes.data : []);
+      } catch (err) { setSkills([]); }
+
+      try {
+        const expRes = await api.get('/experiences');
+        setExperiences(Array.isArray(expRes.data) ? expRes.data : []);
+      } catch (err) { setExperiences([]); }
+
+      try {
+        const eduRes = await api.get('/educations');
+        setEducations(Array.isArray(eduRes.data) ? eduRes.data : []);
+      } catch (err) { setEducations([]); }
+
+      try {
+        const researchRes = await api.get('/research');
+        setResearch(Array.isArray(researchRes.data) ? researchRes.data : []);
+      } catch (err) { setResearch([]); }
+
+      try {
+        const certRes = await api.get('/certificates');
+        setCertificates(Array.isArray(certRes.data) ? certRes.data : []);
+      } catch (err) { setCertificates([]); }
+
+    } catch (err) {
+      console.error('❌ Error fetching data:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // ✅ Refresh function - called after settings update
+  const refreshData = useCallback(() => {
+    console.log('🔄 Refreshing all data...');
+    fetchAllData();
+  }, [fetchAllData]);
+
+  const value = {
+    projects, setProjects,
+    blogs, setBlogs,
+    skills, setSkills,
+    experiences, setExperiences,
+    educations, setEducations,
+    research, setResearch,
+    certificates, setCertificates,
+    settings, setSettings,
+    loading,
+    error,
+    refreshData,
   };
 
-  const refreshData = useCallback(() => fetchAllData(), []);
-
   return (
-    <DataContext.Provider value={{
-      projects, blogs, skills, experiences, educations,
-      research, certificates, settings, loading, refreshData
-    }}>
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
