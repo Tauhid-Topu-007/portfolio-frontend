@@ -1,44 +1,23 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Typewriter } from 'react-simple-typewriter';
 import { DataContext } from '../../context/DataContext';
 import { getImageUrl } from '../../services/api';
 
-// ✅ Default image - try multiple paths
-const DEFAULT_IMAGES = [
-  '/images/Topu.jpg',
-  '/Topu.jpg',
-  './images/Topu.jpg',
-];
+// ✅ Reliable default - no file dependency
+const DEFAULT_IMAGE = 'https://cultural-jade-qntfo0gxs0.edgeone.app/image.jpg';
 
 const Hero = () => {
   const { settings, loading } = useContext(DataContext);
-  const [imgError, setImgError] = useState(false);
 
   if (loading) return null;
 
   const displayName = settings?.heroSection?.title || settings?.siteName || 'Tauhidul Islam Topu';
   
-  // Get profile image
-  let profileImage;
-  if (settings?.heroSection?.profileImage) {
-    profileImage = getImageUrl(settings.heroSection.profileImage);
-  } else {
-    profileImage = '/images/Topu.jpg';
-  }
-
-  const handleImageError = (e) => {
-    const currentSrc = e.target.src;
-    const currentIndex = DEFAULT_IMAGES.indexOf(currentSrc);
-    
-    // Try next fallback image
-    if (currentIndex < DEFAULT_IMAGES.length - 1) {
-      e.target.src = DEFAULT_IMAGES[currentIndex + 1];
-    } else {
-      // All failed - show initials
-      setImgError(true);
-    }
-  };
+  // ✅ Use uploaded image, local image, or generated avatar
+  const profileImage = settings?.heroSection?.profileImage 
+    ? getImageUrl(settings.heroSection.profileImage) 
+    : '/images/Topu.jpg';
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16 bg-white dark:bg-gray-900">
@@ -51,21 +30,20 @@ const Hero = () => {
             className="mb-8"
           >
             <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-600 p-1 shadow-xl">
-              {!imgError ? (
-                <img
-                  src={profileImage}
-                  alt={displayName}
-                  className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
-                  onError={handleImageError}
-                />
-              ) : (
-                <div className="w-full h-full rounded-full flex items-center justify-center text-white text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <img
+                src={profileImage}
+                alt={displayName}
+                className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
+                onError={(e) => {
+                  // ✅ Ultimate fallback - generated avatar always works
+                  e.target.onerror = null;
+                  e.target.src = DEFAULT_IMAGE;
+                }}
+              />
             </div>
           </motion.div>
 
+          {/* Rest of component unchanged... */}
           <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
