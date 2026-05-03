@@ -1,17 +1,19 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { DataContext } from '../../context/DataContext';
 import { AuthContext } from '../../context/AuthContext';
-import axios from 'axios';
+import api from '../../services/api';
 import { 
   FaProjectDiagram, FaBlog, FaFlask, FaCode, FaEnvelope,
   FaEye, FaHeart, FaCertificate, FaBriefcase, FaGraduationCap
 } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { projects, blogs, research, skills, certificates, experiences, educations, loading } = useContext(DataContext);
   const { user } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ totalViews: 0, totalLikes: 0 });
+  const [fetchLoading, setFetchLoading] = useState(true);
 
   // SAFETY: Ensure all data is array with fallbacks
   const safeProjects = Array.isArray(projects) ? projects : [];
@@ -29,7 +31,7 @@ const AdminDashboard = () => {
 
   const fetchMessages = async () => {
     try {
-      const { data } = await axios.get('/api/messages');
+      const { data } = await api.get('/messages');
       setMessages(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -39,7 +41,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const { data } = await axios.get('/api/blogs');
+      const { data } = await api.get('/blogs');
       const blogData = Array.isArray(data) ? data : [];
       let totalViews = 0, totalLikes = 0;
       for (let i = 0; i < blogData.length; i++) {
@@ -50,45 +52,29 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('Error fetching stats:', err);
       setStats({ totalViews: 0, totalLikes: 0 });
+    } finally {
+      setFetchLoading(false);
     }
   };
 
   // Calculate counts safely
-  const projectsCount = safeProjects.length;
-  const blogsCount = safeBlogs.length;
-  const researchCount = safeResearch.length;
-  const skillsCount = safeSkills.length;
-  const certificatesCount = safeCertificates.length;
-  const experiencesCount = safeExperiences.length;
-  const educationsCount = safeEducations.length;
-  const messagesCount = messages.length;
-
-  // Calculate unread messages safely
-  let unreadMessages = 0;
-  for (let i = 0; i < messages.length; i++) {
-    if (messages[i]?.isRead === false) unreadMessages++;
-  }
-
-  // Calculate unpublished blogs safely
-  let unpublishedBlogs = 0;
-  for (let i = 0; i < safeBlogs.length; i++) {
-    if (safeBlogs[i]?.isPublished === false) unpublishedBlogs++;
-  }
+  const unreadMessages = messages.filter(m => !m.isRead).length;
+  const unpublishedBlogs = safeBlogs.filter(b => !b.isPublished).length;
 
   const statCards = [
-    { title: 'Projects', value: projectsCount, icon: FaProjectDiagram, color: 'bg-blue-500', link: '/admin/projects' },
-    { title: 'Blog Posts', value: blogsCount, icon: FaBlog, color: 'bg-green-500', link: '/admin/blogs' },
-    { title: 'Research Papers', value: researchCount, icon: FaFlask, color: 'bg-purple-500', link: '/admin/research' },
-    { title: 'Skills', value: skillsCount, icon: FaCode, color: 'bg-yellow-500', link: '/admin/skills' },
-    { title: 'Certificates', value: certificatesCount, icon: FaCertificate, color: 'bg-pink-500', link: '/admin/certificates' },
-    { title: 'Experiences', value: experiencesCount, icon: FaBriefcase, color: 'bg-indigo-500', link: '/admin/experiences' },
-    { title: 'Education', value: educationsCount, icon: FaGraduationCap, color: 'bg-teal-500', link: '/admin/educations' },
-    { title: 'Messages', value: messagesCount, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
-    { title: 'Total Views', value: stats.totalViews, icon: FaEye, color: 'bg-indigo-500', link: '/admin/blogs' },
-    { title: 'Total Likes', value: stats.totalLikes, icon: FaHeart, color: 'bg-orange-500', link: '/admin/blogs' },
+    { title: 'Projects', value: safeProjects.length, icon: FaProjectDiagram, color: 'bg-blue-500', link: '/admin/projects' },
+    { title: 'Blog Posts', value: safeBlogs.length, icon: FaBlog, color: 'bg-green-500', link: '/admin/blogs' },
+    { title: 'Research', value: safeResearch.length, icon: FaFlask, color: 'bg-purple-500', link: '/admin/research' },
+    { title: 'Skills', value: safeSkills.length, icon: FaCode, color: 'bg-yellow-500', link: '/admin/skills' },
+    { title: 'Experiences', value: safeExperiences.length, icon: FaBriefcase, color: 'bg-indigo-500', link: '/admin/experiences' },
+    { title: 'Education', value: safeEducations.length, icon: FaGraduationCap, color: 'bg-teal-500', link: '/admin/educations' },
+    { title: 'Certificates', value: safeCertificates.length, icon: FaCertificate, color: 'bg-pink-500', link: '/admin/certificates' },
+    { title: 'Messages', value: messages.length, icon: FaEnvelope, color: 'bg-red-500', link: '/admin/messages' },
+    { title: 'Total Views', value: stats.totalViews, icon: FaEye, color: 'bg-cyan-500' },
+    { title: 'Total Likes', value: stats.totalLikes, icon: FaHeart, color: 'bg-orange-500' },
   ];
 
-  if (loading) {
+  if (loading || fetchLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
@@ -97,22 +83,22 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back, {user?.name || 'Admin'}!</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {unreadMessages > 0 && (
-            <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
+            <Link to="/admin/messages" className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-sm">
               {unreadMessages} Unread Messages
-            </div>
+            </Link>
           )}
           {unpublishedBlogs > 0 && (
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm">
+            <Link to="/admin/blogs" className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm">
               {unpublishedBlogs} Draft Blogs
-            </div>
+            </Link>
           )}
         </div>
       </div>
@@ -120,26 +106,39 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
-          return (
-            <a key={stat.title} href={stat.link} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.title}</p>
-                  <p className="text-3xl font-bold mt-1">{stat.value}</p>
-                </div>
-                <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center`}>
-                  <Icon className="text-white text-xl" />
-                </div>
+          const CardContent = (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.title}</p>
+                <p className="text-3xl font-bold mt-1">{stat.value}</p>
               </div>
-            </a>
+              <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center`}>
+                <Icon className="text-white text-xl" />
+              </div>
+            </div>
+          );
+
+          if (stat.link) {
+            return (
+              <Link key={stat.title} to={stat.link} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block">
+                {CardContent}
+              </Link>
+            );
+          }
+          
+          return (
+            <div key={stat.title} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              {CardContent}
+            </div>
           );
         })}
       </div>
 
+      {/* Recent Messages */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Recent Messages</h2>
-          <a href="/admin/messages" className="text-primary-500 hover:text-primary-600 text-sm">View All →</a>
+          <Link to="/admin/messages" className="text-primary-500 hover:text-primary-600 text-sm">View All →</Link>
         </div>
         {messages.length > 0 ? (
           messages.slice(0, 5).map((message) => (
@@ -153,7 +152,7 @@ const AdminDashboard = () => {
                 <p className="text-sm text-gray-600">{message.subject}</p>
                 <p className="text-xs text-gray-500 mt-1">{new Date(message.createdAt).toLocaleDateString()}</p>
               </div>
-              <a href="/admin/messages" className="text-primary-500 text-sm ml-4">View →</a>
+              <Link to="/admin/messages" className="text-primary-500 text-sm ml-4">View →</Link>
             </div>
           ))
         ) : (
