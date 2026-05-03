@@ -1,23 +1,44 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Typewriter } from 'react-simple-typewriter';
 import { DataContext } from '../../context/DataContext';
 import { getImageUrl } from '../../services/api';
 
-// ✅ Import the image so Vite processes it for production
-import defaultProfileImg from '/images/Topu.jpg';
+// ✅ Default image - try multiple paths
+const DEFAULT_IMAGES = [
+  '/images/Topu.jpg',
+  '/Topu.jpg',
+  './images/Topu.jpg',
+];
 
 const Hero = () => {
   const { settings, loading } = useContext(DataContext);
+  const [imgError, setImgError] = useState(false);
 
   if (loading) return null;
 
   const displayName = settings?.heroSection?.title || settings?.siteName || 'Tauhidul Islam Topu';
   
-  // ✅ Get profile image - use uploaded image OR local default
-  const profileImage = settings?.heroSection?.profileImage 
-    ? getImageUrl(settings.heroSection.profileImage) 
-    : defaultProfileImg;
+  // Get profile image
+  let profileImage;
+  if (settings?.heroSection?.profileImage) {
+    profileImage = getImageUrl(settings.heroSection.profileImage);
+  } else {
+    profileImage = '/images/Topu.jpg';
+  }
+
+  const handleImageError = (e) => {
+    const currentSrc = e.target.src;
+    const currentIndex = DEFAULT_IMAGES.indexOf(currentSrc);
+    
+    // Try next fallback image
+    if (currentIndex < DEFAULT_IMAGES.length - 1) {
+      e.target.src = DEFAULT_IMAGES[currentIndex + 1];
+    } else {
+      // All failed - show initials
+      setImgError(true);
+    }
+  };
 
   return (
     <section className="min-h-screen flex items-center justify-center pt-16 bg-white dark:bg-gray-900">
@@ -30,15 +51,18 @@ const Hero = () => {
             className="mb-8"
           >
             <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-600 p-1 shadow-xl">
-              <img
-                src={profileImage}
-                alt="Profile"
-                className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = defaultProfileImg;
-                }}
-              />
+              {!imgError ? (
+                <img
+                  src={profileImage}
+                  alt={displayName}
+                  className="w-full h-full rounded-full object-cover border-4 border-white dark:border-gray-800"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="w-full h-full rounded-full flex items-center justify-center text-white text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
           </motion.div>
 
