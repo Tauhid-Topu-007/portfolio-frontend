@@ -1,7 +1,14 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 
 export const DataContext = createContext();
+
+export const useData = () => {
+  const context = React.useContext(DataContext);
+  if (!context) throw new Error('useData must be used within a DataProvider');
+  return context;
+};
 
 export const DataProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
@@ -9,78 +16,72 @@ export const DataProvider = ({ children }) => {
   const [skills, setSkills] = useState([]);
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
-  const [certificates, setCertificates] = useState([]);
   const [research, setResearch] = useState([]);
+  const [certificates, setCertificates] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchAllData();
   }, []);
 
   const fetchAllData = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const [
-        projectsRes,
-        blogsRes,
-        skillsRes,
-        experiencesRes,
-        educationsRes,
-        certificatesRes,
-        researchRes,
-        settingsRes,
-      ] = await Promise.all([
-        api.get('/projects').catch(() => ({ data: [] })),
-        api.get('/blogs?isPublished=true').catch(() => ({ data: [] })),
-        api.get('/skills').catch(() => ({ data: [] })),
-        api.get('/experiences').catch(() => ({ data: [] })),
-        api.get('/educations').catch(() => ({ data: [] })),
-        api.get('/certificates').catch(() => ({ data: [] })),
-        api.get('/research').catch(() => ({ data: [] })),
-        api.get('/settings').catch(() => ({ data: null })),
-      ]);
-
-      setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
-      setBlogs(Array.isArray(blogsRes.data) ? blogsRes.data : []);
-      setSkills(Array.isArray(skillsRes.data) ? skillsRes.data : []);
-      setExperiences(Array.isArray(experiencesRes.data) ? experiencesRes.data : []);
-      setEducations(Array.isArray(educationsRes.data) ? educationsRes.data : []);
-      setCertificates(Array.isArray(certificatesRes.data) ? certificatesRes.data : []);
-      setResearch(Array.isArray(researchRes.data) ? researchRes.data : []);
-      setSettings(settingsRes.data || null);
+      setLoading(true);
       
+      const endpoints = [
+        { key: 'projects', url: '/api/projects' },
+        { key: 'blogs', url: '/api/blogs' },
+        { key: 'skills', url: '/api/skills' },
+        { key: 'experiences', url: '/api/experiences' },
+        { key: 'educations', url: '/api/educations' },
+        { key: 'research', url: '/api/research' },
+        { key: 'certificates', url: '/api/certificates' },
+        { key: 'settings', url: '/api/settings' },
+      ];
+
+      const setters = {
+        projects: setProjects,
+        blogs: setBlogs,
+        skills: setSkills,
+        experiences: setExperiences,
+        educations: setEducations,
+        research: setResearch,
+        certificates: setCertificates,
+        settings: setSettings,
+      };
+
+      const results = await Promise.allSettled(
+        endpoints.map(endpoint => api.get(endpoint.url))
+      );
+
+      results.forEach((result, index) => {
+        const { key } = endpoints[index];
+        if (result.status === 'fulfilled') {
+          setters[key](result.value.data || []);
+        } else {
+          console.warn(`⚠️ Failed to fetch ${key}:`, result.reason?.message);
+          setters[key](key === 'settings' ? null : []);
+        }
+      });
+
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to load data. Please check your connection.');
+      console.error('❌ Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const refetch = () => {
-    fetchAllData();
-  };
+  const refreshData = useCallback(() => fetchAllData(), []);
 
   return (
-    <DataContext.Provider
-      value={{
-        projects,
-        blogs,
-        skills,
-        experiences,
-        educations,
-        certificates,
-        research,
-        settings,
-        loading,
-        error,
-        refetch,
-      }}
-    >
+    <DataContext.Provider value={{
+      projects, blogs, skills, experiences, educations,
+      research, certificates, settings, loading, refreshData
+    }}>
       {children}
     </DataContext.Provider>
   );
 };
+
+export default DataContext;
