@@ -19,15 +19,14 @@ export const DataProvider = ({ children }) => {
   const [certificates, setCertificates] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
-      console.log('📡 Fetching all data from API...');
+      console.log('📡 Fetching ALL data from API...');
+      console.log('🕐 Timestamp:', new Date().toISOString());
 
-      // Fetch settings FIRST (most important for display)
+      // Fetch settings first
       try {
         const settingsRes = await api.get('/settings');
         console.log('✅ Settings loaded:', settingsRes.data);
@@ -36,47 +35,31 @@ export const DataProvider = ({ children }) => {
         console.error('❌ Settings failed:', err.message);
       }
 
-      // Fetch other data
-      try {
-        const projectsRes = await api.get('/projects');
-        setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
-        console.log('✅ Projects:', projectsRes.data?.length || 0);
-      } catch (err) { console.warn('⚠️ Projects failed:', err.message); setProjects([]); }
+      // Fetch all other data
+      const fetchPromises = [
+        { key: 'projects', fn: () => api.get('/projects'), setter: setProjects },
+        { key: 'blogs', fn: () => api.get('/blogs'), setter: setBlogs },
+        { key: 'skills', fn: () => api.get('/skills'), setter: setSkills },
+        { key: 'experiences', fn: () => api.get('/experiences'), setter: setExperiences },
+        { key: 'educations', fn: () => api.get('/educations'), setter: setEducations },
+        { key: 'research', fn: () => api.get('/research'), setter: setResearch },
+        { key: 'certificates', fn: () => api.get('/certificates'), setter: setCertificates },
+      ];
 
-      try {
-        const blogsRes = await api.get('/blogs');
-        setBlogs(Array.isArray(blogsRes.data) ? blogsRes.data : []);
-        console.log('✅ Blogs:', blogsRes.data?.length || 0);
-      } catch (err) { console.warn('⚠️ Blogs failed:', err.message); setBlogs([]); }
+      for (const item of fetchPromises) {
+        try {
+          const res = await item.fn();
+          const data = Array.isArray(res.data) ? res.data : (res.data?.[item.key] || []);
+          item.setter(data);
+          console.log(`✅ ${item.key}:`, data.length, 'items');
+        } catch (err) {
+          console.warn(`⚠️ ${item.key} failed:`, err.message);
+          item.setter([]);
+        }
+      }
 
-      try {
-        const skillsRes = await api.get('/skills');
-        setSkills(Array.isArray(skillsRes.data) ? skillsRes.data : []);
-      } catch (err) { setSkills([]); }
-
-      try {
-        const expRes = await api.get('/experiences');
-        setExperiences(Array.isArray(expRes.data) ? expRes.data : []);
-      } catch (err) { setExperiences([]); }
-
-      try {
-        const eduRes = await api.get('/educations');
-        setEducations(Array.isArray(eduRes.data) ? eduRes.data : []);
-      } catch (err) { setEducations([]); }
-
-      try {
-        const researchRes = await api.get('/research');
-        setResearch(Array.isArray(researchRes.data) ? researchRes.data : []);
-      } catch (err) { setResearch([]); }
-
-      try {
-        const certRes = await api.get('/certificates');
-        setCertificates(Array.isArray(certRes.data) ? certRes.data : []);
-      } catch (err) { setCertificates([]); }
-
-    } catch (err) {
-      console.error('❌ Error fetching data:', err);
-      setError(err.message);
+    } catch (error) {
+      console.error('❌ Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -87,9 +70,9 @@ export const DataProvider = ({ children }) => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // ✅ Refresh function - called after settings update
+  // ✅ Refresh function
   const refreshData = useCallback(() => {
-    console.log('🔄 Refreshing all data...');
+    console.log('🔄 Manual refresh triggered');
     fetchAllData();
   }, [fetchAllData]);
 
@@ -103,7 +86,6 @@ export const DataProvider = ({ children }) => {
     certificates, setCertificates,
     settings, setSettings,
     loading,
-    error,
     refreshData,
   };
 
