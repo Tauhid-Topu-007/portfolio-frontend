@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// ✅ FORCE CORRECT URL - This WILL use the right backend
+// ✅ FORCE CORRECT URL
 const API_BASE = 'https://portfolio-backend-2-ly21.onrender.com/api';
 
 console.log('🔗 API Base:', API_BASE);
@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log('📤', config.method?.toUpperCase(), config.baseURL + config.url);
+  console.log('📤', config.method?.toUpperCase(), API_BASE + config.url);
   return config;
 });
 

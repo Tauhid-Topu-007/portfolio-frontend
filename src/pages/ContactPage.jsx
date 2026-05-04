@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { DataContext } from '../context/DataContext';
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaPaperPlane, FaSpinner } from 'react-icons/fa';
 
-// ✅ HARDCODED RENDER BACKEND URL - NOT the Vercel frontend URL
+// ✅ HARDCODED RENDER BACKEND URL
 const BACKEND_URL = 'https://portfolio-backend-2-ly21.onrender.com/api';
 
 const ContactPage = () => {
@@ -16,10 +16,9 @@ const ContactPage = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    console.log('📧 Sending to:', BACKEND_URL + '/messages');
+    console.log('📧 Sending to:', `${BACKEND_URL}/messages`);
     
     try {
-      // ✅ Direct call to Render backend
       const response = await fetch(`${BACKEND_URL}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,7 +42,6 @@ const ContactPage = () => {
       }
     } catch (error) {
       console.error('❌ Error:', error);
-      // Fallback to email
       toast.error('Form failed. Opening email...');
       setTimeout(() => {
         window.location.href = `mailto:t.topu021@gmail.com?subject=${encodeURIComponent(data.subject || 'Contact')}&body=${encodeURIComponent('From: ' + data.name + '\nEmail: ' + data.email + '\n\n' + data.message)}`;
@@ -121,30 +119,34 @@ const ContactPage = () => {
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Name *</label>
-                  <input {...register('name', { required: true })}
+                  <input {...register('name', { required: 'Name is required' })}
                     className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600"
                     placeholder="Your name" />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Email *</label>
-                  <input type="email" {...register('email', { required: true })}
+                  <input type="email" {...register('email', { required: 'Email is required' })}
                     className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600"
                     placeholder="your@email.com" />
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Subject *</label>
-                  <input {...register('subject', { required: true })}
+                  <input {...register('subject', { required: 'Subject is required' })}
                     className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600"
                     placeholder="Message subject" />
+                  {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Message *</label>
-                  <textarea {...register('message', { required: true })} rows={5}
+                  <textarea {...register('message', { required: 'Message is required' })} rows={5}
                     className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600 resize-none"
                     placeholder="Your message..." />
+                  {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>}
                 </div>
 
                 <button type="submit" disabled={isSubmitting}
