@@ -1,9 +1,11 @@
 import axios from 'axios';
 
+// ✅ NEW BACKEND URL
 const BASE_URL = 'https://portfolio-backend-2-ly21.onrender.com';
 const API_BASE = `${BASE_URL}/api`;
 
 console.log('🔗 API Base:', API_BASE);
+console.log('📁 Base URL:', BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -16,9 +18,7 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  if (config.method === 'get') {
-    config.params = { ...config.params, _t: Date.now() };
-  }
+  console.log('📤', config.method?.toUpperCase(), API_BASE + config.url);
   return config;
 });
 
@@ -34,32 +34,36 @@ api.interceptors.response.use(
   }
 );
 
-// ✅ Cache-busted image URL
+// ✅ Image URL helper
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   
-  let url;
-  
+  // Cloudinary URL - return as is
   if (imagePath.includes('cloudinary.com')) {
-    url = imagePath;
-  } else if (imagePath.startsWith('http')) {
-    url = imagePath;
-  } else if (imagePath.startsWith('/uploads/')) {
-    url = `${BASE_URL}${imagePath}`;
-  } else if (imagePath.startsWith('uploads/')) {
-    url = `${BASE_URL}/${imagePath}`;
-  } else if (!imagePath.includes('/')) {
-    url = `${BASE_URL}/uploads/images/${imagePath}`;
-  } else {
-    url = `${BASE_URL}/${imagePath}`;
+    return imagePath;
   }
   
-  // Add cache buster
-  if (url && !url.startsWith('data:')) {
-    url += `${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  // Full URL
+  if (imagePath.startsWith('http')) {
+    return imagePath;
   }
   
-  return url;
+  // /uploads/ path
+  if (imagePath.startsWith('/uploads/')) {
+    return `${BASE_URL}${imagePath}`;
+  }
+  
+  // uploads/ without leading slash
+  if (imagePath.startsWith('uploads/')) {
+    return `${BASE_URL}/${imagePath}`;
+  }
+  
+  // Just filename
+  if (!imagePath.includes('/')) {
+    return `${BASE_URL}/uploads/images/${imagePath}`;
+  }
+  
+  return `${BASE_URL}/${imagePath}`;
 };
 
 export default api;

@@ -7,7 +7,7 @@ import { DataContext } from '../context/DataContext';
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaGithub, FaLinkedin, FaTwitter, FaPaperPlane, FaSpinner } from 'react-icons/fa';
 
 // ✅ HARDCODED Backend URL - guaranteed to work
-const BACKEND_URL = 'https://portfolio-backend-axtu.onrender.com';
+const BACKEND_URL = 'https://portfolio-backend-2-ly21.onrender.com/api';
 
 const ContactPage = () => {
   const { settings } = useContext(DataContext);
