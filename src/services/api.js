@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// ✅ FORCE CORRECT BACKEND URL
-const BASE_URL = 'https://portfolio-backend-2-ly21.onrender.com';
-const API_BASE = `${BASE_URL}/api`;
+// ✅ FORCE CORRECT URL - This WILL use the right backend
+const API_BASE = 'https://portfolio-backend-2-ly21.onrender.com/api';
 
 console.log('🔗 API Base:', API_BASE);
 
@@ -37,10 +36,10 @@ export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.includes('cloudinary.com')) return imagePath;
   if (imagePath.startsWith('http')) return imagePath;
-  if (imagePath.startsWith('/uploads/')) return `${BASE_URL}${imagePath}`;
-  if (imagePath.startsWith('uploads/')) return `${BASE_URL}/${imagePath}`;
-  if (!imagePath.includes('/')) return `${BASE_URL}/uploads/images/${imagePath}`;
-  return `${BASE_URL}/${imagePath}`;
+  if (imagePath.startsWith('/uploads/')) return `https://portfolio-backend-2-ly21.onrender.com${imagePath}`;
+  if (imagePath.startsWith('uploads/')) return `https://portfolio-backend-2-ly21.onrender.com/${imagePath}`;
+  if (!imagePath.includes('/')) return `https://portfolio-backend-2-ly21.onrender.com/uploads/images/${imagePath}`;
+  return `https://portfolio-backend-2-ly21.onrender.com/${imagePath}`;
 };
 
 export default api;
