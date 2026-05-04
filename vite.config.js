@@ -9,21 +9,18 @@ export default defineConfig({
       '/api': {
         target: 'https://portfolio-backend-2-ly21.onrender.com',
         changeOrigin: true,
-        secure: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('error', (err) => console.log('Proxy error:', err));
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('Proxying:', req.method, req.url, '→', proxyReq.path);
+          });
+        }
       },
       '/uploads': {
         target: 'https://portfolio-backend-2-ly21.onrender.com',
         changeOrigin: true,
-        secure: true,
-      }
-    }
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        entryFileNames: `assets/[name].[hash].js`,
-        chunkFileNames: `assets/[name].[hash].js`,
-        assetFileNames: `assets/[name].[hash].[ext]`
+        secure: false,
       }
     }
   }
