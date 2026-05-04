@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { DataContext } from '../context/DataContext';
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaPaperPlane, FaSpinner } from 'react-icons/fa';
 
-// ✅ Backend URL
+// ✅ HARDCODED RENDER BACKEND URL - NOT the Vercel frontend URL
 const BACKEND_URL = 'https://portfolio-backend-2-ly21.onrender.com/api';
 
 const ContactPage = () => {
@@ -16,8 +16,10 @@ const ContactPage = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
+    console.log('📧 Sending to:', BACKEND_URL + '/messages');
     
     try {
+      // ✅ Direct call to Render backend
       const response = await fetch(`${BACKEND_URL}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,7 +31,9 @@ const ContactPage = () => {
         }),
       });
 
+      console.log('📥 Status:', response.status);
       const result = await response.json();
+      console.log('📥 Response:', result);
 
       if (response.ok) {
         toast.success('✅ Message sent successfully!');
@@ -38,11 +42,11 @@ const ContactPage = () => {
         throw new Error(result.message || 'Failed');
       }
     } catch (error) {
-      console.error('Error:', error);
-      // ✅ Fallback: Open email client
-      toast.error('Form failed. Opening email client...');
+      console.error('❌ Error:', error);
+      // Fallback to email
+      toast.error('Form failed. Opening email...');
       setTimeout(() => {
-        window.location.href = `mailto:t.topu021@gmail.com?subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent('From: ' + data.name + '\nEmail: ' + data.email + '\n\n' + data.message)}`;
+        window.location.href = `mailto:t.topu021@gmail.com?subject=${encodeURIComponent(data.subject || 'Contact')}&body=${encodeURIComponent('From: ' + data.name + '\nEmail: ' + data.email + '\n\n' + data.message)}`;
       }, 1000);
     } finally {
       setIsSubmitting(false);
@@ -64,10 +68,7 @@ const ContactPage = () => {
       icon: FaMapMarkerAlt, title: 'Location', 
       value: settings?.address || 'Dhaka, Bangladesh', link: null 
     },
-    { 
-      icon: FaClock, title: 'Working Hours', 
-      value: 'Mon-Fri: 9AM - 6PM', link: null 
-    },
+    { icon: FaClock, title: 'Working Hours', value: 'Mon-Fri: 9AM - 6PM', link: null },
   ];
 
   return (
@@ -89,7 +90,6 @@ const ContactPage = () => {
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Contact Info */}
               <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
                 <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
                 {contactInfo.map((info, index) => (
@@ -100,9 +100,7 @@ const ContactPage = () => {
                     <div>
                       <h3 className="font-semibold">{info.title}</h3>
                       {info.link ? (
-                        <a href={info.link} className="text-gray-600 dark:text-gray-400 hover:text-blue-500 break-all">
-                          {info.value}
-                        </a>
+                        <a href={info.link} className="text-gray-600 dark:text-gray-400 hover:text-blue-500 break-all">{info.value}</a>
                       ) : (
                         <p className="text-gray-600 dark:text-gray-400">{info.value}</p>
                       )}
@@ -110,54 +108,43 @@ const ContactPage = () => {
                   </div>
                 ))}
 
-                {/* Direct Email Button */}
-                <a
-                  href="mailto:t.topu021@gmail.com"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg"
-                >
+                <a href="mailto:t.topu021@gmail.com"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg">
                   <FaEnvelope /> Email Me Directly
                 </a>
               </motion.div>
 
-              {/* Contact Form */}
-              <motion.form
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
+              <motion.form initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }}
                 onSubmit={handleSubmit(onSubmit)}
-                className="space-y-5 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md"
-              >
+                className="space-y-5 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold mb-4">Send Message</h2>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Name *</label>
-                  <input {...register('name', { required: 'Name is required' })}
-                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+                  <input {...register('name', { required: true })}
+                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600"
                     placeholder="Your name" />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Email *</label>
-                  <input type="email" {...register('email', { required: 'Email is required' })}
-                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+                  <input type="email" {...register('email', { required: true })}
+                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600"
                     placeholder="your@email.com" />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Subject *</label>
-                  <input {...register('subject', { required: 'Subject is required' })}
-                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+                  <input {...register('subject', { required: true })}
+                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600"
                     placeholder="Message subject" />
-                  {errors.subject && <p className="text-red-500 text-sm mt-1">{errors.subject.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Message *</label>
-                  <textarea {...register('message', { required: 'Message is required' })} rows={5}
-                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 resize-none"
+                  <textarea {...register('message', { required: true })} rows={5}
+                    className="w-full px-4 py-3 rounded-lg border dark:bg-gray-900 dark:border-gray-600 resize-none"
                     placeholder="Your message..." />
-                  {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message.message}</p>}
                 </div>
 
                 <button type="submit" disabled={isSubmitting}
@@ -166,10 +153,7 @@ const ContactPage = () => {
                 </button>
 
                 <p className="text-center text-sm text-gray-500">
-                  Or{' '}
-                  <a href="mailto:t.topu021@gmail.com" className="text-blue-500 hover:underline font-medium">
-                    click here to email directly
-                  </a>
+                  Or <a href="mailto:t.topu021@gmail.com" className="text-blue-500 hover:underline font-medium">email directly</a>
                 </p>
               </motion.form>
             </div>
