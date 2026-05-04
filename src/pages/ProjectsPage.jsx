@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { DataContext } from '../context/DataContext';
 import { getImageUrl } from '../services/api';
@@ -11,6 +11,8 @@ const ProjectsPage = () => {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
+  const safeProjects = Array.isArray(projects) ? projects : [];
+
   const categories = [
     { value: 'all', label: 'All' },
     { value: 'web', label: 'Web Development' },
@@ -19,16 +21,16 @@ const ProjectsPage = () => {
     { value: 'other', label: 'Other' },
   ];
 
-  const filteredProjects = projects?.filter(project => {
+  const filteredProjects = safeProjects.filter(project => {
     const matchesFilter = filter === 'all' || project.category === filter;
-    const matchesSearch = project.title?.toLowerCase().includes(search.toLowerCase()) ||
-                          project.description?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (project.title || '').toLowerCase().includes(search.toLowerCase()) ||
+                          (project.description || '').toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch && project.isActive;
   });
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -38,9 +40,11 @@ const ProjectsPage = () => {
     <>
       <Helmet>
         <title>Projects | Portfolio</title>
+        <meta name="description" content="View my portfolio of projects and work" />
       </Helmet>
 
       <div className="pt-20 min-h-screen bg-white dark:bg-gray-900">
+        {/* Hero Section */}
         <section className="py-12 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
           <div className="container mx-auto px-4">
             <motion.div
@@ -52,12 +56,13 @@ const ProjectsPage = () => {
                 My <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Projects</span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                Here are some of my recent works
+                Here are some of my recent works and personal projects
               </p>
             </motion.div>
           </div>
         </section>
 
+        {/* Content Section */}
         <section className="py-12">
           <div className="container mx-auto px-4">
             {/* Filters */}
@@ -85,20 +90,19 @@ const ProjectsPage = () => {
                   placeholder="Search projects..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
+                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 w-64"
                 />
               </div>
             </div>
 
             {/* Projects Grid */}
-            {filteredProjects?.length === 0 ? (
+            {filteredProjects.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">No projects found.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProjects.map((project, index) => {
-                  // ✅ Use getImageUrl for Cloudinary support
                   const imageUrl = getImageUrl(project.image);
                   
                   return (
@@ -109,6 +113,7 @@ const ProjectsPage = () => {
                       transition={{ delay: index * 0.05 }}
                       className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover"
                     >
+                      {/* ✅ Project Image with cache-busting */}
                       <div className="relative h-48 overflow-hidden bg-gray-100 dark:bg-gray-700">
                         {imageUrl ? (
                           <img
@@ -144,6 +149,7 @@ const ProjectsPage = () => {
                           </span>
                         )}
                       </div>
+
                       <div className="p-6">
                         <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{project.title}</h3>
                         <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
@@ -155,6 +161,9 @@ const ProjectsPage = () => {
                               {tech}
                             </span>
                           ))}
+                          {project.technologies?.length > 3 && (
+                            <span className="text-xs text-gray-500">+{project.technologies.length - 3}</span>
+                          )}
                         </div>
                         <div className="flex justify-between items-center">
                           <Link to={`/projects/${project._id}`} className="text-blue-500 hover:text-blue-600 font-semibold">

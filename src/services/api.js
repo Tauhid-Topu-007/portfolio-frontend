@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://portfolio-backend-2-ly21.onrender.com';
+const BASE_URL = 'https://portfolio-backend-axtu.onrender.com';
 const API_BASE = `${BASE_URL}/api`;
 
 console.log('🔗 API Base:', API_BASE);
-console.log('📁 Base URL:', BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -17,14 +16,9 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  // ✅ Add cache-busting parameter to avoid stale data
   if (config.method === 'get') {
-    config.params = {
-      ...config.params,
-      _t: Date.now(), // Cache buster
-    };
+    config.params = { ...config.params, _t: Date.now() };
   }
-  console.log('📤', config.method?.toUpperCase(), API_BASE + config.url);
   return config;
 });
 
@@ -40,37 +34,32 @@ api.interceptors.response.use(
   }
 );
 
-// ✅ Image URL helper - handles ALL possible image sources
+// ✅ Cache-busted image URL
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   
-  // Cloudinary URL - return as is
-  if (imagePath.includes('cloudinary.com') || imagePath.includes('res.cloudinary.com')) {
-    return imagePath;
+  let url;
+  
+  if (imagePath.includes('cloudinary.com')) {
+    url = imagePath;
+  } else if (imagePath.startsWith('http')) {
+    url = imagePath;
+  } else if (imagePath.startsWith('/uploads/')) {
+    url = `${BASE_URL}${imagePath}`;
+  } else if (imagePath.startsWith('uploads/')) {
+    url = `${BASE_URL}/${imagePath}`;
+  } else if (!imagePath.includes('/')) {
+    url = `${BASE_URL}/uploads/images/${imagePath}`;
+  } else {
+    url = `${BASE_URL}/${imagePath}`;
   }
   
-  // Any other full URL (http/https)
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+  // Add cache buster
+  if (url && !url.startsWith('data:')) {
+    url += `${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
   }
   
-  // Local /uploads path
-  if (imagePath.startsWith('/uploads/')) {
-    return `${BASE_URL}${imagePath}`;
-  }
-  
-  // uploads/ without leading slash
-  if (imagePath.startsWith('uploads/')) {
-    return `${BASE_URL}/${imagePath}`;
-  }
-  
-  // Just a filename
-  if (!imagePath.includes('/')) {
-    return `${BASE_URL}/uploads/images/${imagePath}`;
-  }
-  
-  // Other relative path
-  return `${BASE_URL}/${imagePath}`;
+  return url;
 };
 
 export default api;
