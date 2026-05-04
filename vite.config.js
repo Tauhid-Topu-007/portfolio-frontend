@@ -14,6 +14,7 @@ export default defineConfig({
       '/uploads': {
         target: 'https://portfolio-backend-2-ly21.onrender.com',
         changeOrigin: true,
+        secure: true,
       }
     }
   },
