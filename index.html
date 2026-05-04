@@ -5,54 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#6366f1" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <title>Portfolio - Tauhidul Islam Topu</title>
+    <title>Portfolio</title>
+    
+    <!-- ✅ LOAD THIS FIRST - Before anything else -->
+    <script src="/redirect.js"></script>
   </head>
   <body>
     <div id="root"></div>
-    
-    <!-- ✅ THIS SCRIPT RUNS FIRST - Before React even loads -->
-    <script>
-      // Override fetch to redirect ALL API calls to Render backend
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options) {
-        if (typeof url === 'string') {
-          // If trying to call Vercel domain, redirect to Render
-          if (url.includes('vercel.app/api')) {
-            url = url.replace(/https:\/\/.*?\.vercel\.app\/api/, 'https://portfolio-backend-2-ly21.onrender.com/api');
-            console.log('🔄 Redirected to Render:', url);
-          }
-          // If relative /api/ path, prepend Render
-          if (url.startsWith('/api/')) {
-            url = 'https://portfolio-backend-2-ly21.onrender.com' + url;
-            console.log('🔄 Prefixed Render:', url);
-          }
-        }
-        return originalFetch.call(window, url, options);
-      };
-      
-      // Also override XMLHttpRequest for axios
-      const originalOpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function(method, url) {
-        if (typeof url === 'string') {
-          if (url.includes('vercel.app/api')) {
-            url = url.replace(/https:\/\/.*?\.vercel\.app\/api/, 'https://portfolio-backend-2-ly21.onrender.com/api');
-          }
-          if (url.startsWith('/api/')) {
-            url = 'https://portfolio-backend-2-ly21.onrender.com' + url;
-          }
-        }
-        return originalOpen.call(this, method, url);
-      };
-      
-      console.log('✅ API Redirect Active → https://portfolio-backend-2-ly21.onrender.com');
-    </script>
-    
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
