@@ -1,11 +1,10 @@
 import axios from 'axios';
 
-// ✅ NEW BACKEND URL
+// ✅ FORCE CORRECT BACKEND URL
 const BASE_URL = 'https://portfolio-backend-2-ly21.onrender.com';
 const API_BASE = `${BASE_URL}/api`;
 
 console.log('🔗 API Base:', API_BASE);
-console.log('📁 Base URL:', BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -18,7 +17,7 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log('📤', config.method?.toUpperCase(), API_BASE + config.url);
+  console.log('📤', config.method?.toUpperCase(), config.baseURL + config.url);
   return config;
 });
 
@@ -34,35 +33,13 @@ api.interceptors.response.use(
   }
 );
 
-// ✅ Image URL helper
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
-  
-  // Cloudinary URL - return as is
-  if (imagePath.includes('cloudinary.com')) {
-    return imagePath;
-  }
-  
-  // Full URL
-  if (imagePath.startsWith('http')) {
-    return imagePath;
-  }
-  
-  // /uploads/ path
-  if (imagePath.startsWith('/uploads/')) {
-    return `${BASE_URL}${imagePath}`;
-  }
-  
-  // uploads/ without leading slash
-  if (imagePath.startsWith('uploads/')) {
-    return `${BASE_URL}/${imagePath}`;
-  }
-  
-  // Just filename
-  if (!imagePath.includes('/')) {
-    return `${BASE_URL}/uploads/images/${imagePath}`;
-  }
-  
+  if (imagePath.includes('cloudinary.com')) return imagePath;
+  if (imagePath.startsWith('http')) return imagePath;
+  if (imagePath.startsWith('/uploads/')) return `${BASE_URL}${imagePath}`;
+  if (imagePath.startsWith('uploads/')) return `${BASE_URL}/${imagePath}`;
+  if (!imagePath.includes('/')) return `${BASE_URL}/uploads/images/${imagePath}`;
   return `${BASE_URL}/${imagePath}`;
 };
 
