@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://portfolio-backend-axtu.onrender.com';
+const BASE_URL = 'https://portfolio-backend-2-ly21.onrender.com';
 const API_BASE = `${BASE_URL}/api`;
 
 console.log('🔗 API Base:', API_BASE);
