@@ -4,8 +4,8 @@ import { Typewriter } from 'react-simple-typewriter';
 import { DataContext } from '../../context/DataContext';
 import { getImageUrl } from '../../services/api';
 
-// ✅ SAME IMPORT AS ABOUTPAGE - this works!
-import defaultProfileImg from '/images/Topu.jpg';
+// ✅ Import from src/assets - Vite will bundle this for production
+import defaultProfileImg from '../../assets/Topu.jpg';
 
 const Hero = () => {
   const { settings, loading } = useContext(DataContext);
@@ -14,7 +14,6 @@ const Hero = () => {
 
   const displayName = settings?.heroSection?.title || settings?.siteName || 'Tauhidul Islam Topu';
   
-  // ✅ Same logic as AboutPage
   const profileImage = settings?.heroSection?.profileImage 
     ? getImageUrl(settings.heroSection.profileImage) 
     : defaultProfileImg;
