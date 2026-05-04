@@ -7,12 +7,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://portfolio-backend-1-qj6w.onrender.com',
+        target: 'https://portfolio-backend-2-ly21.onrender.com',
         changeOrigin: true,
         secure: true,
       },
       '/uploads': {
-        target: 'https://portfolio-backend-1-qj6w.onrender.com',
+        target: 'https://portfolio-backend-2-ly21.onrender.com',
         changeOrigin: true,
       }
     }

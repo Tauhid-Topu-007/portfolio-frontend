@@ -3,7 +3,7 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
-    "VITE_API_URL": "https://portfolio-backend-1-qj6w.onrender.com"
+    "VITE_API_URL": "https://portfolio-backend-2-ly21.onrender.com"
   },
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
