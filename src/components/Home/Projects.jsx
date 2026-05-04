@@ -7,9 +7,14 @@ import { FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 
 const Projects = () => {
   const { projects, loading } = useContext(DataContext);
-  const featuredProjects = projects?.filter(p => p.featured && p.isActive).slice(0, 3);
 
   if (loading) return null;
+
+  // ✅ Get active projects, featured first, show at least 3
+  const activeProjects = projects?.filter(p => p.isActive) || [];
+  const featuredProjects = activeProjects.filter(p => p.featured);
+  const otherProjects = activeProjects.filter(p => !p.featured);
+  const displayProjects = [...featuredProjects, ...otherProjects].slice(0, Math.max(3, featuredProjects.length));
 
   return (
     <section id="projects" className="py-20">
@@ -30,7 +35,7 @@ const Projects = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredProjects?.map((project, index) => (
+          {displayProjects.map((project, index) => (
             <motion.div
               key={project._id}
               initial={{ opacity: 0, y: 30 }}
@@ -40,7 +45,6 @@ const Projects = () => {
               className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover"
             >
               <div className="relative h-48 overflow-hidden">
-                {/* ✅ FIXED: Use getImageUrl() to convert relative path to full URL */}
                 <img
                   src={getImageUrl(project.image) || 'https://via.placeholder.com/400x300?text=No+Image'}
                   alt={project.title}
