@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaSave, FaUpload, FaTrash, FaUser, FaGlobe, FaEnvelope, FaLink, FaPalette, FaEye, FaHome } from 'react-icons/fa';
 import { DataContext } from '../../context/DataContext';
-import api, { getImageUrl } from '../../services/api';
+import api from '../../services/api';
+
+// ✅ Backend URL for uploads
+const BACKEND_URL = 'https://portfolio-backend-axtu.onrender.com';
 
 const SettingsManager = () => {
   const navigate = useNavigate();
@@ -45,7 +48,7 @@ const SettingsManager = () => {
   // Load settings from context
   useEffect(() => {
     if (settings) {
-      console.log('📋 Loading settings:', settings);
+      console.log('📋 Loading settings into form:', settings);
       setFormData({
         siteName: settings.siteName || 'My Portfolio',
         siteTitle: settings.siteTitle || 'My Portfolio',
@@ -80,56 +83,62 @@ const SettingsManager = () => {
     }
   }, [settings]);
 
-// Profile image upload handler
-const handleProfileUpload = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  // ✅ Upload Profile Image to Cloudinary
+  const handleProfileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error('File size must be less than 5MB');
-    return;
-  }
-
-  const uploadFormData = new FormData();
-  uploadFormData.append('profileImage', file);
-
-  setUploadingProfile(true);
-  try {
-    const token = localStorage.getItem('token');
-    
-    // ✅ Upload to backend (which uploads to Cloudinary)
-    const response = await fetch('https://portfolio-backend-1-qj6w.onrender.com/api/upload/profile', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: uploadFormData,
-    });
-
-    const data = await response.json();
-    console.log('📸 Upload response:', data);
-
-    if (data.success) {
-      // ✅ Use the Cloudinary URL directly
-      const imageUrl = data.fullUrl || data.url;
-      setFormData(prev => ({
-        ...prev,
-        heroSection: { ...prev.heroSection, profileImage: imageUrl }
-      }));
-      toast.success('✅ Image uploaded to Cloudinary! Click Save to apply.');
-    } else {
-      toast.error(data.message || 'Upload failed');
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
     }
-  } catch (error) {
-    console.error('Upload error:', error);
-    toast.error('Failed to upload image');
-  } finally {
-    setUploadingProfile(false);
-  }
-};
 
-  // ✅ Handle Background Image Upload
+    const uploadFormData = new FormData();
+    uploadFormData.append('profileImage', file);
+
+    setUploadingProfile(true);
+    try {
+      const token = localStorage.getItem('token');
+      console.log('📤 Uploading profile image to Cloudinary...');
+      
+      const response = await fetch(`${BACKEND_URL}/api/upload/profile`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: uploadFormData,
+      });
+
+      const data = await response.json();
+      console.log('📥 Upload response:', data);
+
+      if (data.success) {
+        const imageUrl = data.fullUrl || data.url;
+        console.log('✅ Cloudinary URL:', imageUrl);
+        
+        setFormData(prev => ({
+          ...prev,
+          heroSection: { ...prev.heroSection, profileImage: imageUrl }
+        }));
+        toast.success('✅ Image uploaded to Cloudinary! Now click "Save All Settings" to apply.');
+      } else {
+        toast.error(data.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      toast.error('Failed to upload image. Check console for details.');
+    } finally {
+      setUploadingProfile(false);
+    }
+  };
+
+  // ✅ Upload Background Image to Cloudinary
   const handleBackgroundUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
 
     const uploadFormData = new FormData();
     uploadFormData.append('backgroundImage', file);
@@ -137,32 +146,38 @@ const handleProfileUpload = async (e) => {
     setUploadingBackground(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://portfolio-backend-1-qj6w.onrender.com/api/upload/background', {
+      console.log('📤 Uploading background image to Cloudinary...');
+      
+      const response = await fetch(`${BACKEND_URL}/api/upload/background`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: uploadFormData,
       });
 
       const data = await response.json();
+      console.log('📥 Upload response:', data);
 
       if (data.success) {
         const imageUrl = data.fullUrl || data.url;
+        console.log('✅ Cloudinary URL:', imageUrl);
+        
         setFormData(prev => ({
           ...prev,
           heroSection: { ...prev.heroSection, backgroundImage: imageUrl }
         }));
-        toast.success('✅ Background image uploaded! Click "Save All Settings" to apply.');
+        toast.success('✅ Background uploaded to Cloudinary! Click "Save All Settings" to apply.');
       } else {
         toast.error(data.message || 'Upload failed');
       }
     } catch (error) {
+      console.error('❌ Upload error:', error);
       toast.error('Failed to upload background image.');
     } finally {
       setUploadingBackground(false);
     }
   };
 
-  // ✅ Remove Profile Image
+  // Remove Profile Image
   const handleRemoveProfileImage = () => {
     setFormData(prev => ({
       ...prev,
@@ -171,7 +186,7 @@ const handleProfileUpload = async (e) => {
     toast.success('Profile image removed. Click Save to apply.');
   };
 
-  // ✅ Remove Background Image
+  // Remove Background Image
   const handleRemoveBackgroundImage = () => {
     setFormData(prev => ({
       ...prev,
@@ -180,12 +195,12 @@ const handleProfileUpload = async (e) => {
     toast.success('Background image removed. Click Save to apply.');
   };
 
-  // ✅ Save Settings & Redirect to Home
+  // ✅ Save Settings
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Prepare data
+    // Prepare keywords
     const keywordsArray = formData.siteKeywords
       ? formData.siteKeywords.split(',').map(k => k.trim()).filter(k => k)
       : [];
@@ -215,22 +230,22 @@ const handleProfileUpload = async (e) => {
       const response = await api.put('/settings', dataToSend);
       console.log('✅ Settings saved:', response.data);
 
-      // Update context
+      // Refresh context data
       if (typeof refreshData === 'function') {
         await refreshData();
       }
 
       toast.success('✅ Settings saved successfully! Redirecting to homepage...');
 
-      // ✅ Redirect to homepage after 1.5 seconds
+      // Redirect to homepage
       setTimeout(() => {
         navigate('/');
-        window.location.href = '/'; // Force full reload to show changes
+        window.location.href = '/';
       }, 1500);
 
     } catch (error) {
       console.error('❌ Save error:', error);
-      toast.error(error.response?.data?.message || 'Failed to save settings. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to save settings.');
     } finally {
       setLoading(false);
     }
@@ -360,7 +375,10 @@ const handleProfileUpload = async (e) => {
                 <div className="flex-1 min-w-[200px]">
                   <label className={`inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition-colors ${uploadingProfile ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <FaUpload size={14} />
-                    <span className="text-sm">{uploadingProfile ? 'Uploading...' : formData.heroSection.profileImage ? 'Change Picture' : 'Upload Picture'}</span>
+                    <span className="text-sm">
+                      {uploadingProfile ? 'Uploading to Cloudinary...' : 
+                       formData.heroSection.profileImage ? 'Change Picture' : 'Upload to Cloudinary'}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -369,9 +387,12 @@ const handleProfileUpload = async (e) => {
                       disabled={uploadingProfile}
                     />
                   </label>
-                  <p className="text-xs text-gray-500 mt-2">Square image recommended. Max 5MB (JPG, PNG, GIF, WebP)</p>
+                  <p className="text-xs text-gray-500 mt-2">Square image recommended. Max 10MB</p>
                   {formData.heroSection.profileImage && (
-                    <p className="text-xs text-green-600 mt-1">✅ Image ready. Click "Save All Settings" to apply.</p>
+                    <div className="mt-1">
+                      <p className="text-xs text-green-600">✅ Image ready</p>
+                      <p className="text-xs text-gray-400 truncate max-w-xs">{formData.heroSection.profileImage}</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -393,7 +414,7 @@ const handleProfileUpload = async (e) => {
 
         {/* ===== GENERAL SETTINGS ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <FaGlobe className="text-blue-500" /> General Settings
             </h2>
@@ -406,12 +427,6 @@ const handleProfileUpload = async (e) => {
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">Site Title</label>
-              <input type="text" value={formData.siteTitle}
-                onChange={(e) => setFormData(p => ({ ...p, siteTitle: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" />
-            </div>
-            <div className="md:col-span-2">
               <label className="block text-sm font-semibold mb-2">Site Description</label>
               <textarea rows={2} value={formData.siteDescription}
                 onChange={(e) => setFormData(p => ({ ...p, siteDescription: e.target.value }))}
@@ -429,7 +444,7 @@ const handleProfileUpload = async (e) => {
 
         {/* ===== CONTACT INFO ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-b">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <FaEnvelope className="text-blue-500" /> Contact Information
             </h2>
