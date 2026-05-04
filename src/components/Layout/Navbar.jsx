@@ -2,13 +2,15 @@ import React, { useState, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiMenu, FiX, FiMoon, FiSun } from 'react-icons/fi';
-import { ThemeContext } from '../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { DataContext } from '../../context/DataContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { theme, toggleTheme } = useContext(ThemeContext) || { theme: 'light' };
+  
+  // ✅ Use the useTheme hook instead of useContext directly
+  const { theme, toggleTheme } = useTheme();
   const { settings } = useContext(DataContext);
   const location = useLocation();
 
@@ -59,20 +61,40 @@ const Navbar = () => {
               </Link>
             ))}
             
+            {/* ✅ Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Toggle theme"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
-              {theme === 'dark' ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
+              {theme === 'dark' ? (
+                <FiSun className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <FiMoon className="w-5 h-5 text-gray-600" />
+              )}
             </button>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-4">
-            <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-              {theme === 'dark' ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
+            {/* ✅ Mobile Theme Toggle */}
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <FiSun className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <FiMoon className="w-5 h-5 text-gray-600" />
+              )}
             </button>
-            <button onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            
+            <button 
+              onClick={() => setIsOpen(!isOpen)} 
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
               {isOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
             </button>
           </div>
@@ -83,6 +105,7 @@ const Navbar = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             className="md:hidden mt-4 py-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg"
           >
             {navLinks.map((link) => (
@@ -90,7 +113,7 @@ const Navbar = () => {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`block px-4 py-3 ${
+                className={`block px-4 py-3 transition-colors ${
                   location.pathname === link.path
                     ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'

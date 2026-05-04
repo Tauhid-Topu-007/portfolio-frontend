@@ -14,10 +14,7 @@ import MessageManager from '../components/Admin/MessageManager';
 import SettingsManager from '../components/Admin/SettingsManager';
 
 const AdminPage = () => {
-  const { user, loading } = useContext(AuthContext);
-
-  console.log('🔐 AdminPage - User:', user);
-  console.log('🔐 AdminPage - Loading:', loading);
+  const { user, loading, isAuthenticated } = useContext(AuthContext);
 
   if (loading) {
     return (
@@ -30,8 +27,7 @@ const AdminPage = () => {
     );
   }
 
-  if (!user || user.role !== 'admin') {
-    console.log('❌ Not authorized, redirecting to login');
+  if (!isAuthenticated || !user || user.role !== 'admin') {
     return <Navigate to="/admin/login" replace />;
   }
 
