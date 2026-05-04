@@ -59,7 +59,7 @@ const ContactPage = () => {
     },
     { 
       icon: FaPhone, title: 'Phone', 
-      value: settings?.contactPhone || '+880 1XXX-XXXXXX', 
+      value: settings?.contactPhone || '+880 1400522994', 
       link: settings?.contactPhone ? `tel:${settings.contactPhone}` : null 
     },
     { 
