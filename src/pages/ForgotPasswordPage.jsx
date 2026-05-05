@@ -1,10 +1,12 @@
+// src/pages/ForgotPasswordPage.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { FaEnvelope, FaArrowLeft, FaPaperPlane, FaCopy } from 'react-icons/fa';
+import NeuralBackground from '../components/NeuralBackground';
+import { FaEnvelope, FaArrowLeft, FaPaperPlane, FaCopy, FaCheckCircle, FaKey } from 'react-icons/fa';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -18,12 +20,10 @@ const ForgotPasswordPage = () => {
     
     try {
       const response = await axios.post('/api/auth/forgot-password', { email });
-      console.log('Response:', response.data);
       
       if (response.data.success) {
         setSubmitted(true);
         
-        // Try to fetch the reset link from the separate endpoint
         setTimeout(async () => {
           try {
             const linkResponse = await axios.get(`/api/auth/get-reset-link/${email}`);
@@ -32,8 +32,6 @@ const ForgotPasswordPage = () => {
               toast.success('Reset link retrieved!');
             }
           } catch (err) {
-            console.log('Could not fetch reset link automatically');
-            // Check if response contains resetUrl
             if (response.data.resetUrl) {
               setResetLink(response.data.resetUrl);
             }
@@ -45,7 +43,6 @@ const ForgotPasswordPage = () => {
         toast.error(response.data.message || 'Failed to generate reset link');
       }
     } catch (error) {
-      console.error('Error:', error.response?.data || error.message);
       toast.error(error.response?.data?.message || 'Failed to generate reset link');
     } finally {
       setLoading(false);
@@ -63,14 +60,35 @@ const ForgotPasswordPage = () => {
         <title>Forgot Password | Portfolio</title>
       </Helmet>
 
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500/20 to-primary-700/20 px-4">
+      <NeuralBackground 
+        density="low"
+        primaryColor="#8B5CF6"
+        secondaryColor="#3B82F6"
+        accentColor="#EC4899"
+        connectionOpacity={0.3}
+        nodeSize={2.2}
+        pulseSpeed={0.8}
+      />
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md"
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-700"
         >
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold gradient-text mb-2">Forgot Password</h1>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, type: 'spring' }}
+              className="w-20 h-20 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+            >
+              <FaKey className="text-3xl text-white" />
+            </motion.div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
+              Forgot Password
+            </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Enter your email to reset your password
             </p>
@@ -79,15 +97,15 @@ const ForgotPasswordPage = () => {
           {!submitted ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-2">Email Address</label>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Email Address</label>
                 <div className="relative">
-                  <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FaEnvelope className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -96,27 +114,37 @@ const ForgotPasswordPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? 'Generating...' : 'Generate Reset Link'}
-                {!loading && <FaPaperPlane size={14} />}
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    Generate Reset Link <FaPaperPlane size={14} />
+                  </>
+                )}
               </button>
 
               <div className="text-center">
-                <Link to="/admin/login" className="text-primary-500 hover:text-primary-600 text-sm inline-flex items-center gap-1">
+                <Link to="/admin/login" className="text-purple-500 hover:text-pink-500 text-sm inline-flex items-center gap-1">
                   <FaArrowLeft size={12} /> Back to Login
                 </Link>
               </div>
             </form>
           ) : (
             <div className="text-center space-y-4">
-              <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-4 rounded-lg">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-4 rounded-xl"
+              >
+                <FaCheckCircle className="text-2xl mx-auto mb-2" />
                 <p>Reset link generated for:</p>
                 <p className="font-semibold mt-1 break-all">{email}</p>
-              </div>
+              </motion.div>
               
-              <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-lg">
-                <p className="text-sm font-semibold mb-2">📋 Reset Your Password</p>
+              <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-xl">
+                <p className="text-sm font-semibold mb-2 text-blue-700 dark:text-blue-400">📋 Reset Your Password</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                   Use the link below to reset your password:
                 </p>
@@ -126,12 +154,12 @@ const ForgotPasswordPage = () => {
                     <>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Reset Link:</p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <code className="text-xs text-primary-500 break-all flex-1">
+                        <code className="text-xs text-purple-500 break-all flex-1 font-mono">
                           {resetLink}
                         </code>
                         <button
                           onClick={copyToClipboard}
-                          className="p-2 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                          className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-colors"
                           title="Copy link"
                         >
                           <FaCopy size={14} />
@@ -141,24 +169,24 @@ const ForgotPasswordPage = () => {
                         href={resetLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-primary-500 hover:text-primary-600 mt-2 inline-block"
+                        className="text-xs text-purple-500 hover:text-pink-500 mt-2 inline-block"
                       >
                         Click here to reset password →
                       </a>
                     </>
                   ) : (
-                    <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded">
-                      <p className="text-sm font-semibold mb-1">⚠️ Check Backend Console</p>
-                      <p className="text-xs">
+                    <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
+                      <p className="text-sm font-semibold mb-1 text-yellow-700 dark:text-yellow-400">⚠️ Check Backend Console</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         The reset link is printed in your backend terminal. 
-                        Look for "🔐 PASSWORD RESET LINK" in the console.
+                        Look for "PASSWORD RESET LINK" in the console.
                       </p>
                     </div>
                   )}
                 </div>
               </div>
               
-              <Link to="/admin/login" className="btn-primary inline-block">
+              <Link to="/admin/login" className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                 Back to Login
               </Link>
             </div>

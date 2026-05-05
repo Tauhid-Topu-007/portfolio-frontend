@@ -1,3 +1,4 @@
+// src/pages/AdminPage.jsx
 import React, { useContext } from 'react';
 import { Navigate, Routes, Route } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -12,16 +13,17 @@ import EducationManager from '../components/Admin/EducationManager';
 import CertificateManager from '../components/Admin/CertificateManager';
 import MessageManager from '../components/Admin/MessageManager';
 import SettingsManager from '../components/Admin/SettingsManager';
+import { FaSpinner } from 'react-icons/fa';
 
 const AdminPage = () => {
   const { user, loading, isAuthenticated } = useContext(AuthContext);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <FaSpinner className="animate-spin text-4xl text-purple-500 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );

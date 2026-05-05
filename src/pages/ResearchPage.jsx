@@ -1,9 +1,11 @@
+// src/pages/ResearchPage.jsx
 import React, { useContext, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { DataContext } from '../context/DataContext';
 import { getImageUrl } from '../services/api';
-import { FaSearch, FaFilePdf, FaExternalLinkAlt, FaUserFriends, FaCalendar } from 'react-icons/fa';
+import NeuralBackground from '../components/NeuralBackground';
+import { FaSearch, FaFilePdf, FaExternalLinkAlt, FaUserFriends, FaCalendar, FaBookOpen, FaQuoteLeft, FaGraduationCap } from 'react-icons/fa';
 import moment from 'moment';
 
 const ResearchPage = () => {
@@ -26,7 +28,10 @@ const ResearchPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-500 dark:text-gray-400">Loading research papers...</p>
+        </div>
       </div>
     );
   }
@@ -38,47 +43,79 @@ const ResearchPage = () => {
         <meta name="description" content="View my research papers and publications" />
       </Helmet>
 
-      <div className="pt-20 min-h-screen bg-white dark:bg-gray-900">
-        {/* Hero Section */}
-        <section className="py-12 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
-          <div className="container mx-auto px-4">
+      <NeuralBackground 
+        density="low"
+        primaryColor="#8B5CF6"
+        secondaryColor="#3B82F6"
+        accentColor="#EC4899"
+        connectionOpacity={0.3}
+        nodeSize={2.2}
+        pulseSpeed={0.9}
+      />
+
+      <div className="relative z-10 pt-20 min-h-screen">
+        <section className="py-16">
+          <div className="container mx-auto px-4 text-center">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
+              transition={{ duration: 0.7 }}
             >
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Research <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Papers</span>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5, type: 'spring' }}
+                className="inline-block p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl mb-6 shadow-lg"
+              >
+                <FaGraduationCap className="text-4xl text-white" />
+              </motion.div>
+              <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent">
+                Research Papers
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                Academic publications and research contributions
+              <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto backdrop-blur-sm bg-white/40 dark:bg-gray-900/40 rounded-2xl p-5">
+                Academic publications and research contributions in various fields
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* Content Section */}
-        <section className="py-12">
+        <section className="py-8 pb-20">
           <div className="container mx-auto px-4">
-            {/* Search */}
-            <div className="max-w-md mx-auto mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="max-w-md mx-auto mb-10"
+            >
               <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search research papers..."
+                  placeholder="Search papers by title, author, or keyword..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-12 pr-5 py-3 rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                 />
               </div>
-            </div>
+            </motion.div>
 
-            {/* Research Papers */}
             {filteredResearch.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">No research papers found.</p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-20"
+              >
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto">
+                  <FaBookOpen className="text-5xl text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">No research papers found.</p>
+                  <button 
+                    onClick={() => setSearch('')}
+                    className="mt-4 text-purple-500 hover:text-pink-500"
+                  >
+                    Clear search →
+                  </button>
+                </div>
+              </motion.div>
             ) : (
               <div className="space-y-6">
                 {filteredResearch.map((paper, index) => (
@@ -87,43 +124,45 @@ const ResearchPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg card-hover"
+                    className="group bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex flex-col md:flex-row gap-6">
-                      {/* ✅ Paper Image/Icon */}
                       <div className="flex-shrink-0">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
                           <FaFilePdf className="text-white text-3xl" />
                         </div>
                       </div>
 
                       <div className="flex-1">
-                        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+                        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white group-hover:text-purple-500 transition-colors">
                           {paper.title || 'Untitled'}
                         </h2>
                         
                         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
                           <span className="flex items-center gap-1">
-                            <FaUserFriends /> {(paper.authors || []).slice(0, 3).join(', ')}
+                            <FaUserFriends className="text-purple-500" /> {(paper.authors || []).slice(0, 3).join(', ')}
                             {(paper.authors || []).length > 3 && ` +${paper.authors.length - 3}`}
                           </span>
                           <span className="flex items-center gap-1">
-                            <FaCalendar /> {paper.publicationDate ? moment(paper.publicationDate).format('YYYY') : 'N/A'}
+                            <FaCalendar className="text-purple-500" /> {paper.publicationDate ? moment(paper.publicationDate).format('YYYY') : 'N/A'}
                           </span>
                         </div>
                         
                         <p className="text-gray-600 dark:text-gray-400 mb-2">
-                          <strong>Published in:</strong> {paper.publicationVenue || 'N/A'}
+                          <strong className="text-purple-500">Published in:</strong> {paper.publicationVenue || 'N/A'}
                         </p>
                         
-                        <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
-                          {paper.abstract || 'No abstract available.'}
-                        </p>
+                        <div className="relative mt-3 mb-4">
+                          <FaQuoteLeft className="absolute -top-2 -left-2 text-purple-300 dark:text-purple-700 text-xl" />
+                          <p className="text-gray-600 dark:text-gray-400 pl-6 leading-relaxed">
+                            {paper.abstract || 'No abstract available.'}
+                          </p>
+                        </div>
                         
                         {(paper.keywords || []).length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
                             {paper.keywords.map((keyword, i) => (
-                              <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">
+                              <span key={i} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">
                                 {keyword}
                               </span>
                             ))}
@@ -136,7 +175,7 @@ const ResearchPage = () => {
                               href={`https://doi.org/${paper.doi}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600"
+                              className="inline-flex items-center gap-2 text-purple-500 hover:text-pink-500 transition-colors"
                             >
                               DOI: {paper.doi} <FaExternalLinkAlt size={12} />
                             </a>
@@ -146,7 +185,7 @@ const ResearchPage = () => {
                               href={getImageUrl(paper.pdfUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 text-sm"
                             >
                               <FaFilePdf /> Download PDF
                             </a>

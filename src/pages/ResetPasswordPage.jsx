@@ -1,10 +1,12 @@
+// src/pages/ResetPasswordPage.jsx
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { FaLock, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
+import NeuralBackground from '../components/NeuralBackground';
+import { FaLock, FaEye, FaEyeSlash, FaCheckCircle, FaArrowLeft, FaShieldAlt } from 'react-icons/fa';
 
 const ResetPasswordPage = () => {
   const { token } = useParams();
@@ -40,7 +42,6 @@ const ResetPasswordPage = () => {
         setResetSuccess(true);
         toast.success('Password reset successful!');
         
-        // Redirect to login after 3 seconds
         setTimeout(() => {
           navigate('/admin/login');
         }, 3000);
@@ -57,25 +58,43 @@ const ResetPasswordPage = () => {
 
   if (resetSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500/20 to-primary-700/20 px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md text-center"
-        >
-          <FaCheckCircle className="text-green-500 text-6xl mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Password Reset Successful!</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Your password has been reset successfully.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-            Redirecting to login page...
-          </p>
-          <Link to="/admin/login" className="btn-primary inline-block">
-            Go to Login
-          </Link>
-        </motion.div>
-      </div>
+      <>
+        <NeuralBackground 
+          density="low"
+          primaryColor="#8B5CF6"
+          secondaryColor="#3B82F6"
+          accentColor="#EC4899"
+          connectionOpacity={0.3}
+          nodeSize={2.2}
+          pulseSpeed={0.8}
+        />
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md text-center border border-gray-200 dark:border-gray-700"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, type: 'spring' }}
+              className="w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-lg"
+            >
+              <FaCheckCircle className="text-4xl text-white" />
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Password Reset Successful!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Your password has been reset successfully.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+              Redirecting to login page...
+            </p>
+            <Link to="/admin/login" className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+              Go to Login
+            </Link>
+          </motion.div>
+        </div>
+      </>
     );
   }
 
@@ -85,14 +104,35 @@ const ResetPasswordPage = () => {
         <title>Reset Password | Portfolio</title>
       </Helmet>
 
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500/20 to-primary-700/20 px-4">
+      <NeuralBackground 
+        density="low"
+        primaryColor="#8B5CF6"
+        secondaryColor="#3B82F6"
+        accentColor="#EC4899"
+        connectionOpacity={0.3}
+        nodeSize={2.2}
+        pulseSpeed={0.8}
+      />
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md"
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-700"
         >
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold gradient-text mb-2">Reset Password</h1>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, type: 'spring' }}
+              className="w-20 h-20 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+            >
+              <FaShieldAlt className="text-3xl text-white" />
+            </motion.div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
+              Reset Password
+            </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Enter your new password below
             </p>
@@ -100,21 +140,21 @@ const ResetPasswordPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">New Password</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">New Password</label>
               <div className="relative">
-                <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                   placeholder="Enter new password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
                 >
                   {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
@@ -125,15 +165,15 @@ const ResetPasswordPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Confirm New Password</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Confirm New Password</label>
               <div className="relative">
-                <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                   placeholder="Confirm new password"
                 />
               </div>
@@ -142,14 +182,18 @@ const ResetPasswordPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full disabled:opacity-50"
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] disabled:opacity-50"
             >
-              {loading ? 'Resetting...' : 'Reset Password'}
+              {loading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mx-auto"></div>
+              ) : (
+                'Reset Password'
+              )}
             </button>
 
             <div className="text-center">
-              <Link to="/admin/login" className="text-primary-500 hover:text-primary-600 text-sm">
-                Back to Login
+              <Link to="/admin/login" className="text-purple-500 hover:text-pink-500 text-sm inline-flex items-center gap-1">
+                <FaArrowLeft size={12} /> Back to Login
               </Link>
             </div>
           </form>
