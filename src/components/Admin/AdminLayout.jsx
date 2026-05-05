@@ -1,20 +1,51 @@
-import React, { useState, useContext } from 'react';
+// src/components/Admin/AdminLayout.jsx
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaTachometerAlt, FaProjectDiagram, FaBlog, FaFlask, 
   FaCode, FaBriefcase, FaGraduationCap, FaCertificate, 
-  FaEnvelope, FaCog, FaBars, FaTimes, FaSignOutAlt 
+  FaEnvelope, FaCog, FaBars, FaTimes, FaSignOutAlt,
+  FaMoon, FaSun
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 
-// ✅ Default avatar from public folder
+// Default avatar from public folder
 import defaultAvatar from '/images/Topu.jpg';
 
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Check and apply theme on mount and when toggled
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('adminTheme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    
+    setIsDarkMode(shouldBeDark);
+    
+    if (shouldBeDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('adminTheme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('adminTheme', 'light');
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -41,7 +72,7 @@ const AdminLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -51,14 +82,13 @@ const AdminLayout = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 flex flex-col ${
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 flex flex-col ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         {/* Logo & User Info */}
-        <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="p-5 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
           <div className="flex items-center gap-3 mb-3">
-            {/* ✅ Avatar with default image */}
-            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-blue-500 shadow-md">
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-purple-500 shadow-md bg-purple-100 dark:bg-purple-900/30">
               <img 
                 src={defaultAvatar} 
                 alt={user?.name || 'Admin'} 
@@ -75,7 +105,7 @@ const AdminLayout = ({ children }) => {
               </p>
             </div>
           </div>
-          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
+          <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-medium">
             Administrator
           </span>
         </div>
@@ -92,11 +122,11 @@ const AdminLayout = ({ children }) => {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
                   active
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
               >
-                <Icon size={18} className={active ? 'text-white' : ''} />
+                <Icon size={18} className={active ? 'text-white' : 'text-gray-500 dark:text-gray-400'} />
                 <span className="font-medium">{item.label}</span>
                 {active && (
                   <span className="ml-auto w-1.5 h-1.5 bg-white rounded-full"></span>
@@ -106,11 +136,21 @@ const AdminLayout = ({ children }) => {
           })}
         </nav>
         
-        {/* Logout */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        {/* Bottom Actions - Theme Toggle & Logout */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex-shrink0 space-y-2">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium"
+          >
+            {isDarkMode ? <FaSun size={18} className="text-yellow-500" /> : <FaMoon size={18} className="text-purple-500" />}
+            <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+          
+          {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium"
           >
             <FaSignOutAlt size={18} />
             <span>Logout</span>
@@ -121,26 +161,35 @@ const AdminLayout = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center gap-3 sticky top-0 z-30">
+        <div className="lg:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
           <button 
             onClick={() => setSidebarOpen(true)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
             <FaBars size={20} className="text-gray-700 dark:text-gray-300" />
           </button>
-          <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+          <span className="font-bold text-lg bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
             Admin Panel
           </span>
+          <button
+            onClick={toggleTheme}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            {isDarkMode ? <FaSun size={18} className="text-yellow-500" /> : <FaMoon size={18} className="text-purple-500" />}
+          </button>
         </div>
 
         {/* Page Content */}
-        <main className="flex-1">
+        <main className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
-          Portfolio Admin Panel &copy; {new Date().getFullYear()}
+        <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-6 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
+          Portfolio Admin Panel &copy; {new Date().getFullYear()} | 
+          <button onClick={toggleTheme} className="ml-2 text-purple-500 hover:text-purple-600 dark:text-purple-400">
+            {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
         </footer>
       </div>
     </div>
