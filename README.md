@@ -128,7 +128,7 @@ I enjoy developing intelligent systems, scalable web applications, automation wo
 ## 🔗 Connect With Me
 
 - **GitHub:** https://github.com/Tauhid-Topu-007
-- **Portfolio:** https://tauhid-topu.netlify.app
+- **Portfolio:** https://portfolio-frontend-rust-six.vercel.app/
 - **Repository:** https://github.com/Tauhid-Topu-007/portfolio-frontend
 
 ## 📄 License
